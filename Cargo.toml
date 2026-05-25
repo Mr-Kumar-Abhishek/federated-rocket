@@ -35,7 +35,7 @@ zip = { version = "2", features = ["deflate"] }
 csv = "1"
 base64 = "0.22"
 flate2 = "1"
-rusqlite = { version = "0.32", features = ["bundled"] }
+rusqlite = { version = "0.39", features = ["bundled"] }
 reqwest = { version = "0.12", features = ["blocking"] }
 slotmap = { version = "1.0", features = ["serde"] }
 serde_json = "1"
