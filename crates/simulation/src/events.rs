@@ -104,6 +104,47 @@ impl FlightEvent {
         }
     }
 
+    /// Creates a new `FlightEvent` with a custom time (for interpolated events).
+    ///
+    /// This is used when event detection occurs at a time between simulation steps,
+    /// such as when using bisection or interpolation for more accurate event timing.
+    pub fn new_with_time(
+        event_type: FlightEventType,
+        time: f64,
+        state: &FlightState,
+    ) -> Self {
+        let description = match event_type {
+            FlightEventType::Launch => "Rocket launched".to_string(),
+            FlightEventType::LaunchRodClear => "Launch rod cleared".to_string(),
+            FlightEventType::BurntimeStart => "Motor ignition / burn started".to_string(),
+            FlightEventType::BurntimeEnd => "Motor burnout".to_string(),
+            FlightEventType::EjectionChargeFire => "Ejection charge fired".to_string(),
+            FlightEventType::Apogee => "Apogee reached".to_string(),
+            FlightEventType::RecoveryDeviceDeployment => "Recovery device deployed".to_string(),
+            FlightEventType::MainDeployment => "Main parachute deployed".to_string(),
+            FlightEventType::GroundHit => "Rocket landed".to_string(),
+            FlightEventType::MaxVelocity => "Maximum velocity reached".to_string(),
+            FlightEventType::MaxAcceleration => "Maximum acceleration reached".to_string(),
+            FlightEventType::SimulationEnd => "Simulation ended".to_string(),
+            FlightEventType::WindChange => "Wind condition change detected".to_string(),
+            FlightEventType::StageSeparation => "Stage separation".to_string(),
+            FlightEventType::Ignition => "Motor ignition".to_string(),
+            FlightEventType::MachTransition => "Mach transition (supersonic)".to_string(),
+            FlightEventType::Tumble => "Rocket tumbling".to_string(),
+            FlightEventType::Error => "Simulation error encountered".to_string(),
+        };
+
+        Self {
+            event_type,
+            time,
+            altitude: state.altitude(),
+            velocity: state.speed(),
+            mach: state.mach,
+            acceleration: 0.0,
+            description,
+        }
+    }
+
     /// Creates a new `FlightEvent` with a custom description.
     pub fn with_description(
         event_type: FlightEventType,
@@ -148,8 +189,9 @@ pub struct EventConfig {
     /// Default: 0.5
     pub landing_detection_threshold: f64,
     /// Interval at which trajectory data points are recorded (s).
-    /// Default: 0.1
-    pub output_interval: f64,
+    /// `None` uses the default of 0.1s.
+    /// Default: None (0.1)
+    pub output_interval: Option<f64>,
     /// Acceleration threshold (m/s²) for MaxAcceleration event detection.
     /// Default: 1.0
     pub acceleration_threshold: f64,
@@ -165,7 +207,7 @@ impl Default for EventConfig {
             max_simulation_time: 120.0,
             ground_altitude: 0.0,
             landing_detection_threshold: 0.5,
-            output_interval: 0.1,
+            output_interval: Some(0.1),
             acceleration_threshold: 1.0,
         }
     }
@@ -224,7 +266,7 @@ mod tests {
         assert!((config.max_simulation_time - 120.0).abs() < 1e-12);
         assert!(config.main_deployment_altitude.is_none());
         assert!((config.ground_altitude - 0.0).abs() < 1e-12);
-        assert!((config.output_interval - 0.1).abs() < 1e-12);
+        assert!((config.output_interval.unwrap_or(0.1) - 0.1).abs() < 1e-12);
     }
 
     #[test]

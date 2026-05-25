@@ -1,4 +1,6 @@
-use std::ops::{Add, Mul};
+use std::ops::{Add, Mul, Sub};
+
+use federated_rocket_math::integrator::Normed;
 
 use federated_rocket_aero::compute::AeroCalculator;
 use federated_rocket_core::component_tree::ComponentTree;
@@ -135,6 +137,32 @@ impl Mul<f64> for CompactState {
             mass: self.mass * rhs,
             propellant_mass: self.propellant_mass * rhs,
         }
+    }
+}
+
+/// Subtraction operator for [`CompactState`], needed by [`AdaptiveRK4Integrator`]
+/// for error estimation via Richardson extrapolation.
+impl Sub for CompactState {
+    type Output = Self;
+
+    fn sub(self, rhs: Self) -> Self {
+        let mut data = [0.0; 13];
+        for i in 0..13 {
+            data[i] = self.data[i] - rhs.data[i];
+        }
+        Self {
+            data,
+            mass: self.mass - rhs.mass,
+            propellant_mass: self.propellant_mass - rhs.propellant_mass,
+        }
+    }
+}
+
+/// Normed implementation for [`CompactState`], required by
+/// [`AdaptiveRK4Integrator::step_adaptive`] for error estimation.
+impl Normed for CompactState {
+    fn norm_squared(&self) -> f64 {
+        self.data.iter().map(|x| x * x).sum::<f64>() + self.mass * self.mass + self.propellant_mass * self.propellant_mass
     }
 }
 
