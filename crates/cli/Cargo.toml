@@ -9,9 +9,18 @@ license.workspace = true
 
 [dependencies]
 federated-rocket-core = { path = "../core" }
+federated-rocket-math = { path = "../math" }
+federated-rocket-physics = { path = "../physics" }
+federated-rocket-aero = { path = "../aero" }
 federated-rocket-simulation = { path = "../simulation" }
 federated-rocket-fileio = { path = "../fileio" }
 federated-rocket-motor-db = { path = "../motor-db" }
+federated-rocket-optimization = { path = "../optimization" }
 clap.workspace = true
 anyhow.workspace = true
 serde.workspace = true
+serde_json.workspace = true
+
+[[bin]]
+name = "federated-rocket"
+path = "src/main.rs"
