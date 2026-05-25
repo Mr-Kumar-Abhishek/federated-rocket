@@ -13,3 +13,6 @@ federated-rocket-physics = { path = "../physics" }
 federated-rocket-math = { path = "../math" }
 serde.workspace = true
 thiserror.workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true
