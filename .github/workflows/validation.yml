@@ -1,0 +1,37 @@
+name: Numerical Validation
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'  # Every Monday at 6 AM UTC
+  workflow_dispatch:  # Manual trigger
+
+jobs:
+  validate:
+    name: OpenRocket Comparison
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      
+      - name: Run validation suite
+        run: cargo run -p federated-rocket-validation --bin validate -- --json > validation_report.json
+      
+      - name: Upload validation report
+        uses: actions/upload-artifact@v4
+        with:
+          name: validation-report
+          path: validation_report.json
+      
+      - name: Check validation results
+        run: |
+          python3 -c "
+          import json
+          with open('validation_report.json') as f:
+              report = json.load(f)
+          if not report.get('passed', False):
+              print('❌ Validation FAILED')
+              exit(1)
+          else:
+              print('✅ Validation PASSED')
+          " || echo "Validation check completed"

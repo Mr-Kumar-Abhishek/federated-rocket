@@ -1,0 +1,28 @@
+name: Benchmarks
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  benchmark:
+    name: Performance Benchmarks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      
+      - name: Install cargo-criterion
+        uses: taiki-e/install-action@cargo-criterion
+      
+      - name: Run benchmarks
+        run: cargo criterion --workspace --message-format=json 2>&1 | tee benchmark_results.json || true
+      
+      - name: Store benchmark results
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results
+          path: target/criterion/

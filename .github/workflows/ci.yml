@@ -1,0 +1,129 @@
+name: CI
+
+on:
+  push:
+    branches: [ "master", "main", "develop" ]
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
+  pull_request:
+    branches: [ "master", "main" ]
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  # Job 1: Check formatting
+  fmt:
+    name: Rustfmt
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - name: Check formatting
+        run: cargo fmt --all --check
+
+  # Job 2: Lint with Clippy
+  clippy:
+    name: Clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - name: Check clippy
+        run: cargo clippy --workspace -- -D warnings
+
+  # Job 3: Build & Test (Linux)
+  test-linux:
+    name: Test (Linux)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Build
+        run: cargo build --workspace --verbose
+      - name: Run tests
+        run: cargo test --workspace --verbose
+      - name: Run validation tests
+        run: cargo test -p federated-rocket-validation
+
+  # Job 4: Build & Test (Windows)
+  test-windows:
+    name: Test (Windows)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Build
+        run: cargo build --workspace --verbose
+      - name: Run tests
+        run: cargo test --workspace --verbose
+
+  # Job 5: Build & Test (macOS)
+  test-macos:
+    name: Test (macOS)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Build
+        run: cargo build --workspace --verbose
+      - name: Run tests
+        run: cargo test --workspace --verbose
+
+  # Job 6: MSRV check (Minimum Supported Rust Version)
+  msrv:
+    name: MSRV (1.80.0)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.80.0
+      - uses: Swatinem/rust-cache@v2
+      - name: Build with MSRV
+        run: cargo check --workspace
+
+  # Job 7: Binary build (release)
+  build-release:
+    name: Build Release Binaries
+    needs: [fmt, clippy, test-linux, test-windows, test-macos]
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            suffix: ""
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            suffix: ".exe"
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            suffix: ""
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build release
+        run: cargo build --release --workspace --verbose
+      - name: List binaries
+        run: |
+          ls -la target/release/federated-rocket${{ matrix.suffix }}
+          ls -la target/release/federated-rocket-gui${{ matrix.suffix }}
+      - name: Upload CLI binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: federated-rocket-${{ matrix.target }}
+          path: target/release/federated-rocket${{ matrix.suffix }}
+      - name: Upload GUI binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: federated-rocket-gui-${{ matrix.target }}
+          path: target/release/federated-rocket-gui${{ matrix.suffix }}

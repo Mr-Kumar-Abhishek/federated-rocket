@@ -1,0 +1,14 @@
+# Default owners
+* @Mr-Kumar-Abhishek
+
+# Core crate
+/crates/core/ @Mr-Kumar-Abhishek
+
+# Simulation crate (critical)
+/crates/simulation/ @Mr-Kumar-Abhishek
+
+# Validation (quality gate)
+/crates/validation/ @Mr-Kumar-Abhishek
+
+# CI/CD configuration
+/.github/ @Mr-Kumar-Abhishek
