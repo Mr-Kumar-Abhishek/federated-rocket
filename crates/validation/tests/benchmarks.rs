@@ -130,6 +130,7 @@ mod benchmarks {
 </OpenRocketDocument>"#;
 
         let dir = std::env::temp_dir().join("federated_rocket_bench");
+        let _ = std::fs::remove_dir_all(&dir); // Clean up any leftover
         std::fs::create_dir_all(&dir).unwrap();
         let path = dir.join("bench.ork");
 
@@ -138,15 +139,20 @@ mod benchmarks {
         const NUM_IO: u32 = 100;
         for _ in 0..NUM_IO {
             // Write
-            std::fs::write(&path, ork_content).unwrap();
+            if let Err(e) = std::fs::write(&path, ork_content) {
+                panic!("Failed to write benchmark file: {}", e);
+            }
             // Read back
-            let _content = std::fs::read_to_string(&path).unwrap();
+            match std::fs::read_to_string(&path) {
+                Ok(content) => { let _ = content; }
+                Err(e) => panic!("Failed to read benchmark file (may be locked by antivirus): {}", e),
+            }
         }
 
         let elapsed = start.elapsed();
         let avg_ms = elapsed.as_secs_f64() * 1000.0 / NUM_IO as f64;
 
         println!("Average file I/O: {:.2} ms", avg_ms);
-        std::fs::remove_dir_all(&dir).unwrap();
+        let _ = std::fs::remove_dir_all(&dir); // Ignore cleanup errors
     }
 }
