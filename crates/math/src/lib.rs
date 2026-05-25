@@ -1,14 +1,11 @@
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
-}
+pub mod vector;
+pub mod matrix;
+pub mod quaternion;
+pub mod integrator;
+pub mod interpolator;
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
-}
+pub use vector::*;
+pub use matrix::*;
+pub use quaternion::*;
+pub use integrator::*;
+pub use interpolator::*;
