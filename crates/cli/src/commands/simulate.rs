@@ -123,11 +123,16 @@ pub fn run(args: SimulateArgs) -> anyhow::Result<()> {
         time_step: args.time_step,
         reference_area: std::f64::consts::PI * 0.0254 * 0.0254, // ~2" diameter default
         reference_diameter: 0.0508,
+        max_time: args.max_time,
+        min_time_step: Some(args.time_step.min(1e-6)),
+        max_time_step: Some(args.time_step),
+        adaptive_tolerance: Some(1e-6),
+        use_adaptive_stepping: false,
     };
     let event_config = EventConfig {
         launch_rod_clear_altitude: args.rod_clear,
         max_simulation_time: args.max_time,
-        output_interval: args.output_interval,
+        output_interval: Some(args.output_interval),
         ground_altitude: if args.launch_altitude > 0.0 {
             args.launch_altitude
         } else {

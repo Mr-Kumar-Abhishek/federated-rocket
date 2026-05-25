@@ -231,7 +231,7 @@ mod tests {
         };
         let event_config = EventConfig {
             max_simulation_time: 3.0,
-            output_interval: 0.1,
+            output_interval: Some(0.1),
             ..EventConfig::default()
         };
         let engine = SimulationEngine::new(config, event_config);
@@ -263,7 +263,7 @@ mod tests {
         };
         let event_config = EventConfig {
             max_simulation_time: 3.0,
-            output_interval: 0.1,
+            output_interval: Some(0.1),
             ..EventConfig::default()
         };
         let engine = SimulationEngine::new(config, event_config);
@@ -318,7 +318,7 @@ mod tests {
         };
         let event_config = EventConfig {
             max_simulation_time: 3.0,
-            output_interval: 0.1,
+            output_interval: Some(0.1),
             ..EventConfig::default()
         };
         let engine = SimulationEngine::new(config, event_config);
@@ -350,7 +350,7 @@ mod tests {
         };
         let event_config = EventConfig {
             max_simulation_time: 3.0,
-            output_interval: 0.1,
+            output_interval: Some(0.1),
             ..EventConfig::default()
         };
         let engine = SimulationEngine::new(config, event_config);
@@ -382,7 +382,7 @@ mod tests {
         };
         let event_config = EventConfig {
             max_simulation_time: 3.0,
-            output_interval: 0.1,
+            output_interval: Some(0.1),
             ..EventConfig::default()
         };
         let engine = SimulationEngine::new(config, event_config);
