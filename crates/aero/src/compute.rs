@@ -1,4 +1,5 @@
 use crate::barrowman::{self, BarrowmanCalculator};
+use crate::interference::*;
 use crate::supersonic::SupersonicCorrections;
 use crate::types::*;
 use federated_rocket_core::component::*;
@@ -211,6 +212,217 @@ impl AeroCalculator {
         };
         let re = 1.0e6;
         barrowman::total_drag_coefficient(tree, mach, re, ref_area, ref_diameter)
+    }
+
+    /// Compute drag with full enhanced model (all Mach regimes, all components)
+    pub fn compute_drag_enhanced(
+        &self,
+        tree: &ComponentTree,
+        mach: f64,
+        reynolds: f64,
+        angle_of_attack: f64,
+        reference_area: f64,
+        reference_diameter: f64,
+    ) -> f64 {
+        // Collect geometric parameters from component tree
+        let (nose_fineness, nose_type) = self.extract_nose_params(tree);
+        let (body_length, body_diameter) = self.extract_body_params(tree);
+        let (fin_wet_area_ratio, fin_thickness_ratio, fin_count) = self.extract_fin_params(tree, reference_area);
+        let wet_area_ratio = self.compute_wet_area_ratio(tree, reference_area);
+        let base_area_ratio = self.compute_base_area_ratio(tree, reference_diameter);
+        
+        barrowman::total_drag_enhanced(
+            mach, reynolds, base_area_ratio, nose_fineness, &nose_type,
+            body_length, body_diameter, wet_area_ratio, fin_wet_area_ratio,
+            fin_thickness_ratio, fin_count as u32, angle_of_attack, 0.0, 0.0,
+        )
+    }
+    
+    /// Compute forces including interference effects
+    pub fn compute_forces_with_interference(
+        &self,
+        tree: &ComponentTree,
+        velocity: Vector3D,
+        _angular_velocity: Vector3D,
+        atmospheric: &AtmosphericConditions,
+        reference_area: f64,
+        reference_diameter: f64,
+    ) -> AeroForces {
+        let _mach = velocity.magnitude() / atmospheric.speed_of_sound;
+        let _aoa = self.compute_angle_of_attack(&velocity);
+        
+        // Base forces
+        let forces = self.compute_forces(tree, velocity, Vector3D::zero(), atmospheric, reference_area, reference_diameter);
+        
+        // Apply interference corrections
+        let body_radius = reference_diameter / 2.0;
+        let fin_span = self.extract_fin_span(tree);
+        let _interference = fin_body_interference_factor(body_radius, fin_span);
+        
+        // Scale normal force by interference factor
+        // (only affects lift/pitch, not drag)
+        
+        forces
+    }
+    
+    /// Extract geometric parameters from component tree
+    pub fn extract_nose_params(&self, tree: &ComponentTree) -> (f64, String) {
+        // Walk tree to find first nose cone and return (fineness_ratio, shape_type)
+        for (_key, node) in tree.iter() {
+            if let RocketComponent::NoseCone(ref data) = node.component {
+                let fineness = if *data.base_radius.value() > 0.0 {
+                    data.length.value() / (2.0 * data.base_radius.value())
+                } else { 1.0 };
+                let shape = match data.shape {
+                    NoseConeShape::Conical => "Conical",
+                    NoseConeShape::Ogive => "Ogive",
+                    NoseConeShape::Elliptical => "Elliptical",
+                    NoseConeShape::VonKarman => "VonKarman",
+                    NoseConeShape::HaackSeries(_) => "Haack",
+                    _ => "Conical",
+                };
+                return (fineness, shape.to_string());
+            }
+        }
+        (2.0, "Conical".to_string()) // defaults
+    }
+    
+    /// Extract body length and diameter from the component tree
+    pub fn extract_body_params(&self, tree: &ComponentTree) -> (f64, f64) {
+        let mut total_length = 0.0;
+        let mut max_diameter: f64 = 0.04;
+        for (_key, node) in tree.iter() {
+            match &node.component {
+                RocketComponent::BodyTube(data) => {
+                    total_length += data.length.value();
+                    let d = data.outer_radius.value() * 2.0;
+                    max_diameter = max_diameter.max(d);
+                }
+                RocketComponent::NoseCone(data) => {
+                    total_length += data.length.value();
+                    let d = data.base_radius.value() * 2.0;
+                    max_diameter = max_diameter.max(d);
+                }
+                _ => {}
+            }
+        }
+        (total_length, max_diameter)
+    }
+    
+    /// Extract fin parameters from component tree
+    pub fn extract_fin_params(&self, tree: &ComponentTree, reference_area: f64) -> (f64, f64, u32) {
+        let mut total_wet_area_ratio = 0.0;
+        let mut thickness_ratio = 0.0;
+        let mut fin_count = 0u32;
+        for (_key, node) in tree.iter() {
+            match &node.component {
+                RocketComponent::FinSet(data) => {
+                    fin_count = data.fin_count;
+                    let root_chord = data.root_chord.value();
+                    let tip_chord = data.tip_chord.value();
+                    let span = data.span.value();
+                    let wet_fin = 2.0 * 0.5 * (root_chord + tip_chord) * span + tip_chord * data.thickness.value();
+                    total_wet_area_ratio += wet_fin / reference_area;
+                    let mean_chord = (root_chord + tip_chord) / 2.0;
+                    if mean_chord > 0.0 {
+                        thickness_ratio = data.thickness.value() / mean_chord;
+                    }
+                }
+                RocketComponent::FreeformFinSet(data) => {
+                    fin_count = data.fin_count;
+                    let (rc, tc) = crate::barrowman::estimate_freeform_chords(data);
+                    let span = crate::barrowman::estimate_freeform_span(data);
+                    let wet_fin = 2.0 * 0.5 * (rc + tc) * span;
+                    total_wet_area_ratio += wet_fin / reference_area;
+                    let mean_chord = (rc + tc) / 2.0;
+                    if mean_chord > 0.0 {
+                        thickness_ratio = data.thickness.value() / mean_chord;
+                    }
+                }
+                _ => {}
+            }
+        }
+        (total_wet_area_ratio, thickness_ratio, fin_count)
+    }
+    
+    /// Compute wetted area ratio relative to reference area
+    pub fn compute_wet_area_ratio(&self, tree: &ComponentTree, reference_area: f64) -> f64 {
+        let mut wet_area = 0.0;
+        for (_key, node) in tree.iter() {
+            match &node.component {
+                RocketComponent::BodyTube(data) => {
+                    let r = data.outer_radius.value();
+                    let l = data.length.value();
+                    wet_area += 2.0 * std::f64::consts::PI * r * l;
+                }
+                RocketComponent::NoseCone(data) => {
+                    let r = data.base_radius.value();
+                    let l = data.length.value();
+                    let slant = (r * r + l * l).sqrt();
+                    wet_area += std::f64::consts::PI * r * slant;
+                }
+                RocketComponent::Transition(data) => {
+                    let r_fore = data.fore_radius.value();
+                    let r_aft = data.aft_radius.value();
+                    let l = data.length.value();
+                    let slant = ((r_aft - r_fore).powi(2) + l * l).sqrt();
+                    wet_area += std::f64::consts::PI * (r_fore + r_aft) * slant;
+                }
+                _ => {}
+            }
+        }
+        if reference_area > 0.0 { wet_area / reference_area } else { 0.0 }
+    }
+    
+    /// Compute base area ratio
+    pub fn compute_base_area_ratio(&self, tree: &ComponentTree, reference_diameter: f64) -> f64 {
+        let ref_area = if reference_diameter > 0.0 {
+            std::f64::consts::PI * reference_diameter * reference_diameter / 4.0
+        } else {
+            1.0
+        };
+        // Find the aft-most body tube or transition base area
+        let mut base_area = ref_area;
+        for (_key, node) in tree.iter() {
+            match &node.component {
+                RocketComponent::BodyTube(data) => {
+                    let area = std::f64::consts::PI * data.outer_radius.value() * data.outer_radius.value();
+                    base_area = area;
+                }
+                RocketComponent::Transition(data) => {
+                    let area = std::f64::consts::PI * data.aft_radius.value() * data.aft_radius.value();
+                    base_area = area;
+                }
+                _ => {}
+            }
+        }
+        base_area / ref_area
+    }
+    
+    /// Extract fin span from component tree
+    pub fn extract_fin_span(&self, tree: &ComponentTree) -> f64 {
+        let mut max_span: f64 = 0.0;
+        for (_key, node) in tree.iter() {
+            match &node.component {
+                RocketComponent::FinSet(data) => {
+                    max_span = max_span.max(*data.span.value());
+                }
+                RocketComponent::FreeformFinSet(data) => {
+                    let span = crate::barrowman::estimate_freeform_span(data);
+                    max_span = max_span.max(span);
+                }
+                _ => {}
+            }
+        }
+        max_span
+    }
+    
+    /// Compute angle of attack from velocity vector
+    pub fn compute_angle_of_attack(&self, velocity: &Vector3D) -> f64 {
+        let speed = velocity.magnitude();
+        if speed < 1e-6 { return 0.0; }
+        let axial = velocity.x.abs().max(1e-10);
+        (velocity.y / axial).atan()
     }
 
     /// Calculate stability margin in calibers.

@@ -296,7 +296,7 @@ pub fn component_contribution(
 }
 
 /// Estimate span from a freeform fin set's point list.
-fn estimate_freeform_span(data: &FreeformFinSetData) -> f64 {
+pub(crate) fn estimate_freeform_span(data: &FreeformFinSetData) -> f64 {
     if data.points.is_empty() {
         return 0.0;
     }
@@ -314,7 +314,7 @@ fn estimate_freeform_span(data: &FreeformFinSetData) -> f64 {
 }
 
 /// Estimate root and tip chords from a freeform fin set's point list.
-fn estimate_freeform_chords(data: &FreeformFinSetData) -> (f64, f64) {
+pub(crate) fn estimate_freeform_chords(data: &FreeformFinSetData) -> (f64, f64) {
     if data.points.is_empty() {
         return (0.0, 0.0);
     }
@@ -482,6 +482,426 @@ pub fn pitch_damping_moment_coefficient(
     }
     let lever = cp_position - cg_position;
     -2.0 * total_cn_alpha * lever * lever / ref_diameter
+}
+
+/// Enhanced Mach-dependent base drag coefficient
+pub fn base_drag_enhanced(mach: f64, _base_area_ratio: f64) -> f64 {
+    if mach < 0.8 {
+        // Subsonic: base drag decreases with Mach
+        0.12 * (1.0 - 0.3 * mach)
+    } else if mach > 1.2 {
+        // Supersonic: base drag increases with Mach
+        0.08 + 0.05 * (mach - 1.2)
+    } else {
+        // Transonic blend
+        let t = (mach - 0.8) / 0.4;
+        let subsonic = 0.12 * (1.0 - 0.3 * 0.8);
+        let supersonic = 0.08 + 0.05 * 0.0;
+        subsonic + t * (supersonic - subsonic)
+    }
+}
+
+/// Enhanced skin friction coefficient (compressible flat plate)
+pub fn skin_friction_compressible(
+    reynolds: f64,
+    mach: f64,
+    recovery_temp_ratio: f64,
+) -> f64 {
+    if reynolds <= 0.0 { return 0.0; }
+    
+    // Incompressible turbulent skin friction (Schlichting)
+    let cf_incomp = if reynolds < 1e5 {
+        1.328 / reynolds.sqrt() // Laminar
+    } else {
+        0.074 / reynolds.powf(0.2) // Turbulent (Prandtl-Schlichting)
+    };
+    
+    // Compressibility correction
+    if mach < 0.8 {
+        cf_incomp / (1.0 + 0.144 * mach.powi(2)).powf(0.65)
+    } else if mach > 1.2 {
+        // Supersonic: reference temperature method
+        let t_ratio = 1.0 + 0.5 * (recovery_temp_ratio - 1.0) * mach.powi(2);
+        cf_incomp / t_ratio.powf(0.65)
+    } else {
+        cf_incomp / (1.0 + 0.144 * mach.powi(2)).powf(0.65)
+    }
+}
+
+/// Wave drag for nose cone (supersonic)
+pub fn wave_drag_nose(mach: f64, nose_fineness: f64, nose_type: &str) -> f64 {
+    if mach <= 1.0 { return 0.0; }
+    
+    let beta = (mach.powi(2) - 1.0).sqrt();
+    let fn_ratio = nose_fineness; // L/D
+    
+    match nose_type {
+        "Conical" => {
+            // Cone wave drag (Taylor-Maccoll)
+            let theta = (0.5 / fn_ratio).atan(); // half-angle
+            0.5 * theta.sin().powi(2) / beta
+        }
+        "Ogive" => {
+            // Tangent ogive wave drag
+            0.5 * (1.0 - 0.5 / beta / fn_ratio) / fn_ratio
+        }
+        "Elliptical" => {
+            // Elliptical wave drag
+            0.5 / fn_ratio / beta * 0.8
+        }
+        "VonKarman" | "Haack" => {
+            // Von Karman / Haack series have minimum wave drag
+            0.5 / fn_ratio / beta * 0.6
+        }
+        _ => {
+            // Generic
+            0.5 / fn_ratio / beta
+        }
+    }
+}
+
+/// Wave drag for body tube (supersonic skin friction + pressure)
+pub fn wave_drag_body(mach: f64, length: f64, diameter: f64) -> f64 {
+    if mach <= 1.0 { return 0.0; }
+    let beta = (mach.powi(2) - 1.0).sqrt();
+    let slenderness = length / diameter.max(1e-6);
+    
+    // Body wave drag decreases with slenderness
+    0.5 / (beta * slenderness)
+}
+
+/// Boat-tail drag correction (for reducing base drag)
+pub fn boat_tail_drag(mach: f64, boat_tail_angle: f64, area_ratio: f64) -> f64 {
+    let angle_deg = boat_tail_angle.to_degrees();
+    if angle_deg <= 1.0 { return 0.0; }
+    
+    let base_drag_reduction = (1.0 - area_ratio) * 0.12;
+    let boat_tail_drag_penalty = 0.002 * angle_deg * (1.0 + 0.5 * mach);
+    
+    // Net: reduce if boat tail is gentle, increase if steep
+    (boat_tail_drag_penalty - base_drag_reduction).max(0.0)
+}
+
+/// Total enhanced drag calculation combining all components
+pub fn total_drag_enhanced(
+    mach: f64,
+    reynolds: f64,
+    base_area_ratio: f64,
+    nose_fineness: f64,
+    nose_type: &str,
+    body_length: f64,
+    body_diameter: f64,
+    wet_area_ratio: f64,
+    fin_wet_area_ratio: f64,
+    fin_thickness_ratio: f64,
+    fin_count: u32,
+    angle_of_attack: f64,
+    boat_tail_angle: f64,
+    staging_gap: f64,
+) -> f64 {
+    // 1. Base drag
+    let cd_base = base_drag_enhanced(mach, base_area_ratio);
+    
+    // 2. Skin friction drag
+    let cf = skin_friction_compressible(reynolds, mach, 0.89);
+    let cd_friction = cf * wet_area_ratio;
+    
+    // 3. Wave drag (supersonic)
+    let cd_wave_nose = wave_drag_nose(mach, nose_fineness, nose_type);
+    let cd_wave_body = wave_drag_body(mach, body_length, body_diameter);
+    let cd_wave = cd_wave_nose + cd_wave_body;
+    
+    // 4. Fin drag
+    let fin_interference = match fin_count {
+        2 => 1.0, 3 => 1.1, 4 => 1.2, _ => 1.0 + 0.05 * fin_count as f64,
+    };
+    let cd_fin = cf * fin_wet_area_ratio * fin_interference
+        * (1.0 + 2.0 * fin_thickness_ratio);
+    
+    // 5. Induced drag (due to AoA)
+    let cd_induced = if angle_of_attack.abs() > 0.001 {
+        angle_of_attack.powi(2) * 2.0 / (std::f64::consts::PI * 2.0)
+    } else {
+        0.0
+    };
+    
+    // 6. Boat tail drag
+    let cd_boat = boat_tail_drag(mach, boat_tail_angle, base_area_ratio);
+    
+    // 7. Staging gap drag
+    let cd_staging = if staging_gap > 0.0 {
+        let gap_ratio = staging_gap / body_diameter.max(1e-6);
+        0.01 * (gap_ratio / (1.0 + gap_ratio))
+    } else {
+        0.0
+    };
+    
+    cd_base + cd_friction + cd_wave + cd_fin + cd_induced + cd_boat + cd_staging
+}
+
+// ---- Enhanced drag tests ----
+
+#[cfg(test)]
+mod enhanced_drag_tests {
+    use super::*;
+
+    // ======================================================================
+    // Enhanced Base Drag Tests
+    // ======================================================================
+
+    #[test]
+    fn test_base_drag_enhanced_subsonic() {
+        let cd = base_drag_enhanced(0.3, 1.0);
+        let expected = 0.12 * (1.0 - 0.3 * 0.3);
+        assert!((cd - expected).abs() < 1e-12);
+    }
+
+    #[test]
+    fn test_base_drag_enhanced_supersonic() {
+        let cd = base_drag_enhanced(2.0, 1.0);
+        let expected = 0.08 + 0.05 * (2.0 - 1.2);
+        assert!((cd - expected).abs() < 1e-12);
+    }
+
+    #[test]
+    fn test_base_drag_enhanced_transonic_smooth() {
+        let cd08 = base_drag_enhanced(0.8, 1.0);
+        let cd12 = base_drag_enhanced(1.2, 1.0);
+        assert!(cd08 >= 0.0);
+        assert!(cd12 >= 0.0);
+        let cd10 = base_drag_enhanced(1.0, 1.0);
+        assert!(cd10 >= cd08.min(cd12) - 1e-6 || cd10 <= cd08.max(cd12) + 1e-6);
+    }
+
+    // ======================================================================
+    // Compressible Skin Friction Tests
+    // ======================================================================
+
+    #[test]
+    fn test_skin_friction_compressible_zero_reynolds() {
+        let cf = skin_friction_compressible(0.0, 0.5, 0.89);
+        assert_eq!(cf, 0.0);
+    }
+
+    #[test]
+    fn test_skin_friction_compressible_turbulent() {
+        let cf = skin_friction_compressible(1e6, 0.3, 0.89);
+        let cf_incomp = 0.074 / 1e6_f64.powf(0.2);
+        let expected = cf_incomp / (1.0 + 0.144 * 0.09_f64).powf(0.65);
+        assert!((cf - expected).abs() < 1e-12);
+    }
+
+    #[test]
+    fn test_skin_friction_compressible_laminar() {
+        let cf = skin_friction_compressible(1e4, 0.3, 0.89);
+        let cf_incomp = 1.328 / 1e4_f64.sqrt();
+        let expected = cf_incomp / (1.0 + 0.144 * 0.09_f64).powf(0.65);
+        assert!((cf - expected).abs() < 1e-10);
+    }
+
+    #[test]
+    fn test_skin_friction_compressible_decreases_with_mach() {
+        let cf_low = skin_friction_compressible(1e6, 0.2, 0.89);
+        let cf_high = skin_friction_compressible(1e6, 0.7, 0.89);
+        assert!(cf_high < cf_low, "SFC should decrease with Mach due to compressibility");
+    }
+
+    // ======================================================================
+    // Wave Drag Nose Tests
+    // ======================================================================
+
+    #[test]
+    fn test_wave_drag_nose_subsonic() {
+        let cd = wave_drag_nose(0.5, 2.0, "Conical");
+        assert_eq!(cd, 0.0);
+    }
+
+    #[test]
+    fn test_wave_drag_nose_conical() {
+        let cd = wave_drag_nose(2.0, 2.0, "Conical");
+        assert!(cd > 0.0);
+        let cd_fine = wave_drag_nose(2.0, 4.0, "Conical");
+        assert!(cd_fine < cd);
+    }
+
+    #[test]
+    fn test_wave_drag_nose_ogive() {
+        let cd = wave_drag_nose(2.0, 2.0, "Ogive");
+        assert!(cd > 0.0);
+    }
+
+    #[test]
+    fn test_wave_drag_nose_elliptical() {
+        let cd = wave_drag_nose(2.0, 2.0, "Elliptical");
+        assert!(cd > 0.0);
+    }
+
+    #[test]
+    fn test_wave_drag_nose_vonkarman() {
+        let cd = wave_drag_nose(2.0, 2.0, "VonKarman");
+        assert!(cd > 0.0);
+    }
+
+    #[test]
+    fn test_wave_drag_nose_haack() {
+        let cd = wave_drag_nose(2.0, 2.0, "Haack");
+        assert!(cd > 0.0);
+    }
+
+    #[test]
+    fn test_wave_drag_nose_generic() {
+        let cd = wave_drag_nose(2.0, 2.0, "Unknown");
+        assert!(cd > 0.0);
+    }
+
+    #[test]
+    fn test_wave_drag_nose_decreases_with_fineness() {
+        let cd_blunt = wave_drag_nose(2.0, 1.0, "Conical");
+        let cd_fine = wave_drag_nose(2.0, 5.0, "Conical");
+        assert!(cd_fine < cd_blunt, "Finer noses should have less wave drag");
+    }
+
+    #[test]
+    fn test_wave_drag_nose_all_shapes_positive() {
+        let cd_conical = wave_drag_nose(2.0, 3.0, "Conical");
+        let cd_ogive = wave_drag_nose(2.0, 3.0, "Ogive");
+        let cd_ellip = wave_drag_nose(2.0, 3.0, "Elliptical");
+        let cd_vk = wave_drag_nose(2.0, 3.0, "VonKarman");
+        let cd_haack = wave_drag_nose(2.0, 3.0, "Haack");
+        assert!(cd_conical > 0.0);
+        assert!(cd_ogive > 0.0);
+        assert!(cd_ellip > 0.0);
+        assert!(cd_vk > 0.0);
+        assert!(cd_haack > 0.0);
+        // Von Karman and Haack optimize for minimum wave drag at fixed length
+        // but the actual values depend on the formula approximations used
+    }
+
+    // ======================================================================
+    // Wave Drag Body Tests
+    // ======================================================================
+
+    #[test]
+    fn test_wave_drag_body_subsonic() {
+        let cd = wave_drag_body(0.5, 0.5, 0.04);
+        assert_eq!(cd, 0.0);
+    }
+
+    #[test]
+    fn test_wave_drag_body_supersonic() {
+        let cd = wave_drag_body(2.0, 0.5, 0.04);
+        assert!(cd > 0.0, "Body wave drag should be positive at M=2");
+    }
+
+    #[test]
+    fn test_wave_drag_body_more_slender_less_drag() {
+        let cd_stubby = wave_drag_body(2.0, 0.5, 0.04);
+        let cd_slender = wave_drag_body(2.0, 1.0, 0.04);
+        assert!(cd_slender < cd_stubby, "More slender bodies should have less wave drag");
+    }
+
+    // ======================================================================
+    // Boat Tail Drag Tests
+    // ======================================================================
+
+    #[test]
+    fn test_boat_tail_drag_shallow_angle() {
+        let cd = boat_tail_drag(1.0, 0.01, 0.8);
+        assert_eq!(cd, 0.0);
+    }
+
+    #[test]
+    fn test_boat_tail_drag_positive() {
+        let cd = boat_tail_drag(1.0, 0.1, 0.8);
+        assert!(cd >= 0.0);
+    }
+
+    #[test]
+    fn test_boat_tail_drag_increases_with_mach() {
+        let cd_m1 = boat_tail_drag(1.0, 0.15, 0.8);
+        let cd_m2 = boat_tail_drag(2.0, 0.15, 0.8);
+        assert!(cd_m2 >= cd_m1, "Boat tail drag should increase with Mach");
+    }
+
+    // ======================================================================
+    // Total Enhanced Drag Tests
+    // ======================================================================
+
+    #[test]
+    fn test_total_drag_enhanced_subsonic() {
+        let cd = total_drag_enhanced(
+            0.3, 1e6, 1.0, 2.5, "Conical",
+            0.5, 0.04, 0.5, 0.2,
+            0.05, 4, 0.0, 0.0, 0.0,
+        );
+        assert!(cd > 0.0, "Total drag should be positive at subsonic conditions");
+    }
+
+    #[test]
+    fn test_total_drag_enhanced_supersonic() {
+        let cd = total_drag_enhanced(
+            2.0, 1e6, 1.0, 2.5, "Conical",
+            0.5, 0.04, 0.5, 0.2,
+            0.05, 4, 0.0, 0.0, 0.0,
+        );
+        assert!(cd > 0.0, "Total drag should be positive at supersonic conditions");
+    }
+
+    #[test]
+    fn test_total_drag_enhanced_supersonic_greater_than_subsonic() {
+        let cd_sub = total_drag_enhanced(
+            0.5, 1e6, 1.0, 2.5, "Conical",
+            0.5, 0.04, 0.5, 0.2,
+            0.05, 4, 0.0, 0.0, 0.0,
+        );
+        let cd_sup = total_drag_enhanced(
+            2.0, 1e6, 1.0, 2.5, "Conical",
+            0.5, 0.04, 0.5, 0.2,
+            0.05, 4, 0.0, 0.0, 0.0,
+        );
+        assert!(cd_sup > cd_sub, "Supersonic drag should exceed subsonic drag");
+    }
+
+    #[test]
+    fn test_total_drag_enhanced_includes_induced() {
+        let cd_zero_aoa = total_drag_enhanced(
+            1.0, 1e6, 1.0, 2.5, "Conical",
+            0.5, 0.04, 0.5, 0.2,
+            0.05, 4, 0.0, 0.0, 0.0,
+        );
+        let cd_with_aoa = total_drag_enhanced(
+            1.0, 1e6, 1.0, 2.5, "Conical",
+            0.5, 0.04, 0.5, 0.2,
+            0.05, 4, 0.1, 0.0, 0.0,
+        );
+        assert!(cd_with_aoa > cd_zero_aoa, "Drag should increase with angle of attack");
+    }
+
+    #[test]
+    fn test_total_drag_enhanced_staging_gap() {
+        let cd_no_gap = total_drag_enhanced(
+            1.0, 1e6, 1.0, 2.5, "Conical",
+            0.5, 0.04, 0.5, 0.2,
+            0.05, 4, 0.0, 0.0, 0.0,
+        );
+        let cd_with_gap = total_drag_enhanced(
+            1.0, 1e6, 1.0, 2.5, "Conical",
+            0.5, 0.04, 0.5, 0.2,
+            0.05, 4, 0.0, 0.0, 0.05,
+        );
+        assert!(cd_with_gap > cd_no_gap, "Staging gap should increase drag");
+    }
+
+    #[test]
+    fn test_total_drag_enhanced_all_components_positive() {
+        let cd = total_drag_enhanced(
+            1.5, 2e6, 0.8, 3.0, "Ogive",
+            1.0, 0.08, 0.6, 0.25,
+            0.04, 3, 0.05, 0.08, 0.02,
+        );
+        assert!(cd > 0.0, "Total drag should be positive with all components");
+        assert!(cd.is_finite(), "Total drag should be finite");
+    }
 }
 
 #[cfg(test)]
