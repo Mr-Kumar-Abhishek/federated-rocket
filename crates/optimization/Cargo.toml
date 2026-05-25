@@ -10,5 +10,9 @@ license.workspace = true
 [dependencies]
 federated-rocket-core = { path = "../core" }
 federated-rocket-simulation = { path = "../simulation" }
+federated-rocket-physics = { path = "../physics" }
 serde.workspace = true
 thiserror.workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true
