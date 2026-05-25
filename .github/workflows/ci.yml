@@ -118,12 +118,12 @@ jobs:
           ls -la target/release/federated-rocket${{ matrix.suffix }}
           ls -la target/release/federated-rocket-gui${{ matrix.suffix }}
       - name: Upload CLI binary
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: federated-rocket-${{ matrix.target }}
           path: target/release/federated-rocket${{ matrix.suffix }}
       - name: Upload GUI binary
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: federated-rocket-gui-${{ matrix.target }}
           path: target/release/federated-rocket-gui${{ matrix.suffix }}
