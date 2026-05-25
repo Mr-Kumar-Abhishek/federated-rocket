@@ -1,14 +1,15 @@
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
-}
+pub mod cache;
+pub mod database;
+pub mod embedded;
+pub mod thrustcurve;
+pub mod types;
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+pub use cache::*;
+pub use database::*;
+pub use thrustcurve::*;
+pub use embedded::*;
+pub use types::*;
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
-}
+// Re-export commonly used items for convenience
+pub use types::{ImpulseClass, Motor, MotorType, ThrustPoint};
+pub use database::MotorDatabase;
