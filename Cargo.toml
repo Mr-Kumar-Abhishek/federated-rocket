@@ -31,7 +31,7 @@ clap = { version = "4", features = ["derive"] }
 egui = "0.30"
 eframe = "0.30"
 quick-xml = { version = "0.37", features = ["serialize"] }
-zip = { version = "2", features = ["deflate"] }
+zip = { version = "8", features = ["deflate"] }
 csv = "1"
 base64 = "0.22"
 flate2 = "1"
