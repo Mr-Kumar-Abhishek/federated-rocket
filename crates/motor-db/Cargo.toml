@@ -1,0 +1,16 @@
+[package]
+name = "federated-rocket-motor-db"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+description = "Motor database for the Federated Rocket project"
+license.workspace = true
+
+[dependencies]
+federated-rocket-core = { path = "../core" }
+serde.workspace = true
+thiserror.workspace = true
+rusqlite.workspace = true
+reqwest.workspace = true
+csv.workspace = true

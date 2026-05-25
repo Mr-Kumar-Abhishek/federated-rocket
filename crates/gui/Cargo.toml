@@ -1,0 +1,19 @@
+[package]
+name = "federated-rocket-gui"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+description = "Graphical user interface for the Federated Rocket project"
+license.workspace = true
+
+[dependencies]
+federated-rocket-core = { path = "../core" }
+federated-rocket-simulation = { path = "../simulation" }
+federated-rocket-fileio = { path = "../fileio" }
+federated-rocket-motor-db = { path = "../motor-db" }
+federated-rocket-optimization = { path = "../optimization" }
+egui.workspace = true
+eframe.workspace = true
+anyhow.workspace = true
+serde.workspace = true

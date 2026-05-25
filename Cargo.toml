@@ -1,0 +1,38 @@
+[workspace]
+resolver = "2"
+
+members = [
+    "crates/core",
+    "crates/math",
+    "crates/physics",
+    "crates/aero",
+    "crates/simulation",
+    "crates/fileio",
+    "crates/motor-db",
+    "crates/optimization",
+    "crates/cli",
+    "crates/gui",
+]
+
+[workspace.package]
+edition = "2021"
+rust-version = "1.80.0"
+authors = ["Federated Rocket Team"]
+description = "A federated rocket simulation and optimization workspace"
+license = "MIT"
+
+[workspace.dependencies]
+serde = { version = "1", features = ["derive"] }
+thiserror = "2"
+uuid = { version = "1", features = ["v4"] }
+anyhow = "1"
+clap = { version = "4", features = ["derive"] }
+egui = "0.30"
+eframe = "0.30"
+quick-xml = "0.37"
+zip = "2"
+csv = "1"
+base64 = "0.22"
+flate2 = "1"
+rusqlite = { version = "0.32", features = ["bundled"] }
+reqwest = { version = "0.12", features = ["blocking"] }

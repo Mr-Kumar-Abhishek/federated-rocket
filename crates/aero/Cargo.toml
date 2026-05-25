@@ -1,0 +1,15 @@
+[package]
+name = "federated-rocket-aero"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+description = "Aerodynamics module for the Federated Rocket project"
+license.workspace = true
+
+[dependencies]
+federated-rocket-core = { path = "../core" }
+federated-rocket-physics = { path = "../physics" }
+federated-rocket-math = { path = "../math" }
+serde.workspace = true
+thiserror.workspace = true

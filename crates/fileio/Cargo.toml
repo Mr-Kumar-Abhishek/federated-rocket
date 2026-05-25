@@ -1,0 +1,20 @@
+[package]
+name = "federated-rocket-fileio"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+description = "File I/O utilities for the Federated Rocket project"
+license.workspace = true
+
+[dependencies]
+federated-rocket-core = { path = "../core" }
+federated-rocket-math = { path = "../math" }
+federated-rocket-motor-db = { path = "../motor-db" }
+serde.workspace = true
+thiserror.workspace = true
+quick-xml.workspace = true
+zip.workspace = true
+csv.workspace = true
+base64.workspace = true
+flate2.workspace = true

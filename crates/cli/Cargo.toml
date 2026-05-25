@@ -1,0 +1,17 @@
+[package]
+name = "federated-rocket-cli"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+description = "Command-line interface for the Federated Rocket project"
+license.workspace = true
+
+[dependencies]
+federated-rocket-core = { path = "../core" }
+federated-rocket-simulation = { path = "../simulation" }
+federated-rocket-fileio = { path = "../fileio" }
+federated-rocket-motor-db = { path = "../motor-db" }
+clap.workspace = true
+anyhow.workspace = true
+serde.workspace = true

@@ -1,0 +1,16 @@
+[package]
+name = "federated-rocket-simulation"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+description = "Simulation engine for the Federated Rocket project"
+license.workspace = true
+
+[dependencies]
+federated-rocket-core = { path = "../core" }
+federated-rocket-physics = { path = "../physics" }
+federated-rocket-aero = { path = "../aero" }
+federated-rocket-math = { path = "../math" }
+serde.workspace = true
+thiserror.workspace = true
