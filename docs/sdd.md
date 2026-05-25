@@ -1601,4 +1601,1349 @@ pub struct SimulationStatus {
     pub conditions: SimulationConditions,
     pub config: FlightConfiguration,
     pub flight_data_branch: FlightDataBranch,
-    pub warnings:
+    pub warnings: WarningSet,
+    pub motor_states: Vec<MotorClusterState>,
+    pub deployed_recovery_devices: Vec<RecoveryDevice>,
+    pub motor_ignited: bool,
+    pub liftoff: bool,
+    pub launch_rod_cleared: bool,
+    pub apogee_reached: bool,
+    pub tumbling: bool,
+    pub landed: bool,
+}
+```
+
+#### 7.4 Integration Loop
+
+The main simulation loop is implemented in the `BasicEventSimulationEngine`, mapped from [`BasicEventSimulationEngine.java`](openrocket/core/src/main/java/info/openrocket/core/simulation/BasicEventSimulationEngine.java):
+
+```
+while flight_time < max_time AND event_queue not empty:
+    1.  Compute current atmospheric conditions
+    2.  Compute aerodynamic forces and moments
+        a. Calculate flight conditions (Mach, AoA, Reynolds number)
+        b. Calculate CP position and CNa for each active component
+        c. Calculate drag breakdown (pressure, base, friction)
+        d. Assemble total force vector in body frame
+        e. Transform to world frame
+    3.  Compute gravity force (in world frame)
+    4.  Compute motor thrust (if any motors burning)
+        a. Interpolate thrust curve at current time
+        b. Scale by number of motors in cluster
+        c. Apply thrust vector (with cant angle if applicable)
+    5.  Compute total forces and moments
+        a. Sum aerodynamic + gravity + thrust forces
+        b. Sum aerodynamic moments + thrust misalignment moments
+        c. Apply damping moments
+    6.  Compute 6-DOF equations of motion derivatives
+        a. dx/dt = velocity
+        b. dq/dt = 0.5 * omega * q  (quaternion derivative)
+        c. dv/dt = F_total / mass
+        d. domega/dt = I^-1 * (M_total - omega × (I * omega))
+        e. dm/dt = -mass_flow_rate (if motor burning)
+    7.  RK4/RK6 step to advance FlightState by dt
+    8.  Update mass properties (mass, CG, MoI) if motor configuration changed
+    9.  Check event queue for crossed thresholds
+        a. Altitude threshold (apogee: vz crosses zero)
+        b. Time threshold (burnout: motor time exceeded)
+        c. Acceleration threshold (liftoff: net upward force > 0)
+        d. Position threshold (launch rod cleared)
+    10. Fire event handlers for triggered events
+        a. Execute event callbacks
+        b. Update simulation configuration (stage separation, recovery deploy)
+        c. Create new data branches if needed
+    11. Notify simulation listeners (post-step)
+    12. Log flight data to FlightDataBranch
+    13. Check simulation end conditions (ground hit, max time)
+```
+
+#### 7.5 Event System
+
+The event system is mapped from [`FlightEvent.java`](openrocket/core/src/main/java/info/openrocket/core/simulation/FlightEvent.java) and [`EventQueue.java`](openrocket/core/src/main/java/info/openrocket/core/simulation/EventQueue.java):
+
+```rust
+/// Flight event types sorted by order of occurrence.
+/// Mapped from FlightEvent.java inner enum Type (lines 26-112).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub enum FlightEventType {
+    Launch,
+    Ignition,
+    Liftoff,
+    Launchrod,
+    Burnout,
+    EjectionCharge,
+    StageSeparation,
+    Apogee,
+    RecoveryDeviceDeployment,
+    GroundHit,
+    Tumble,
+    SimulationEnd,
+    Altitude,
+    SimWarn,
+    SimAbort,
+    Exception,
+}
+
+/// A single flight event with timestamp and source.
+/// Mapped from FlightEvent.java (lines 18-120).
+#[derive(Debug, Clone)]
+pub struct FlightEvent {
+    pub id: Uuid,
+    pub event_type: FlightEventType,
+    pub time: f64,
+    pub source: ComponentId,
+    pub data: Option<Box<dyn Any + Send>>,
+}
+
+impl FlightEvent {
+    pub fn new(event_type: FlightEventType, time: f64, source: ComponentId) -> Self {
+        Self {
+            id: Uuid::new_v4(),
+            event_type,
+            time,
+            source,
+            data: None,
+        }
+    }
+}
+
+impl Ord for FlightEvent {
+    fn cmp(&self, other: &Self) -> Ordering {
+        // Order by time (earliest first), then by event type priority
+        self.time.partial_cmp(&other.time)
+            .unwrap_or(Ordering::Equal)
+            .then_with(|| self.event_type.cmp(&other.event_type))
+    }
+}
+
+impl PartialOrd for FlightEvent {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+/// Priority queue of flight events sorted by time.
+/// Mapped from EventQueue.java.
+pub struct SimulationEventQueue {
+    events: BinaryHeap<Reverse<FlightEvent>>,
+}
+
+impl SimulationEventQueue {
+    pub fn new() -> Self { Self { events: BinaryHeap::new() } }
+
+    pub fn push(&mut self, event: FlightEvent) { self.events.push(Reverse(event)); }
+    pub fn pop(&mut self) -> Option<FlightEvent> { self.events.pop().map(|r| r.0); }
+    pub fn peek(&self) -> Option<&FlightEvent> { self.events.peek().map(|r| &r.0); }
+    pub fn is_empty(&self) -> bool { self.events.is_empty() }
+
+    /// Schedule standard events from simulation configuration
+    pub fn schedule_standard_events(&mut self, config: &FlightConfiguration) {
+        // LAUNCH at t=0
+        self.push(FlightEvent::new(FlightEventType::Launch, 0.0, config.rocket_id()));
+        // IGNITION at t=0 (or configured delay)
+        self.push(FlightEvent::new(FlightEventType::Ignition, 0.0, config.rocket_id()));
+        // SIMULATION_END at max_time
+        self.push(FlightEvent::new(FlightEventType::SimulationEnd, config.max_time(), config.rocket_id()));
+    }
+}
+
+/// Event handler trait — each event type may have one or more handlers.
+pub trait EventHandler: Debug + Send + Sync {
+    fn handle(&self, event: &FlightEvent, status: &mut SimulationStatus) -> Result<()>;
+    fn handled_types(&self) -> &[FlightEventType];
+}
+```
+
+**`SimulationListener` trait** — Mapped from [`SimulationListener.java`](openrocket/core/src/main/java/info/openrocket/core/simulation/listeners/SimulationListener.java):
+
+```rust
+/// Listener for simulation events with pre/post hooks.
+/// Allows listeners to modify state or abort simulation.
+pub trait SimulationListener: Debug + Send + Sync {
+    /// Called before a flight event is processed
+    fn pre_event(&mut self, event: &FlightEvent, status: &mut SimulationStatus) -> Result<()>;
+    /// Called after a flight event is processed
+    fn post_event(&mut self, event: &FlightEvent, status: &SimulationStatus) -> Result<()>;
+    /// Called after each integration step
+    fn post_step(&mut self, status: &SimulationStatus) -> Result<()>;
+    /// Called when simulation is complete
+    fn simulation_end(&mut self, data: &FlightData) -> Result<()>;
+}
+```
+
+**`SimulationExtension` trait** — Mapped from [`SimulationExtension.java`](openrocket/core/src/main/java/info/openrocket/core/simulation/extension/SimulationExtension.java):
+
+```rust
+/// An extension modifies simulation behavior, registered before simulation start.
+pub trait SimulationExtension: Debug + Send + Sync {
+    fn name(&self) -> &str;
+    /// Called to initialize extension at simulation start
+    fn initialize(&mut self, status: &mut SimulationStatus) -> Result<()>;
+    /// Called during the force/moment assembly to modify forces
+    fn apply_forces(&mut self, status: &mut SimulationStatus, forces: &mut TotalForces) -> Result<()>;
+    /// Called during event processing
+    fn process_event(&mut self, event: &FlightEvent, status: &mut SimulationStatus) -> Result<()>;
+}
+
+/// Built-in extensions (mapped from OpenRocket extension examples):
+/// - AirStart: Ignite a motor at specified altitude/velocity/time
+/// - RollControl: Active roll damping
+/// - DampingMoment: Configurable pitch/yaw damping
+/// - StopSimulation: Stop at specified condition
+/// - CsvSave: Auto-export simulation data
+```
+
+**`FlightData` and `FlightDataBranch`** — Mapped from [`FlightData.java`](openrocket/core/src/main/java/info/openrocket/core/simulation/FlightData.java) and [`FlightDataBranch.java`](openrocket/core/src/main/java/info/openrocket/core/simulation/FlightDataBranch.java):
+
+```rust
+/// All flight data for one simulation run.
+/// Contains one or more branches (e.g., after stage separation).
+/// Mapped from FlightData.java.
+#[derive(Debug, Clone)]
+pub struct FlightData {
+    pub branches: Vec<FlightDataBranch>,
+    pub events: Vec<FlightEvent>,
+    pub warnings: WarningSet,
+    /// Calculated summary values
+    pub max_altitude: f64,
+    pub max_velocity: f64,
+    pub max_acceleration: f64,
+    pub max_mach: f64,
+    pub time_to_apogee: f64,
+    pub total_flight_time: f64,
+    pub ground_hit_velocity: f64,
+    pub launch_rod_velocity: f64,
+}
+
+/// A single branch of time-series flight data.
+/// Each DataPoint contains values for all FlightDataType variables.
+/// Mapped from FlightDataBranch.java.
+#[derive(Debug, Clone)]
+pub struct FlightDataBranch {
+    pub name: String,
+    pub data_points: Vec<DataPoint>,
+    pub events: Vec<FlightEvent>,
+}
+
+/// A single data point at one simulation time step.
+#[derive(Debug, Clone)]
+pub struct DataPoint {
+    pub time: f64,
+    pub altitude_agl: f64,
+    pub altitude_msl: f64,
+    pub velocity: Vector3d,
+    pub velocity_total: f64,
+    pub acceleration: Vector3d,
+    pub acceleration_total: f64,
+    pub mach: f64,
+    pub drag_coefficient: f64,
+    pub orientation: Quaternion,
+    pub position: Vector3d,
+    pub thrust: f64,
+    pub mass: f64,
+    pub cg: Vector3d,
+    pub cp: Vector3d,
+    pub stability_margin: f64,
+    pub reynolds_number: f64,
+    pub temperature: f64,
+    pub pressure: f64,
+    pub density: f64,
+    pub wind_velocity: Vector3d,
+    pub event_flags: u32,
+}
+
+/// Enumeration of all available flight data types.
+/// Mapped from FlightDataType.java and FlightDataTypeGroup.java.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum FlightDataType {
+    Time,
+    Altitude,
+    AltitudeAGL,
+    VelocityVertical,
+    VelocityTotal,
+    VelocityHorizontal,
+    AccelerationVertical,
+    AccelerationTotal,
+    AccelerationHorizontal,
+    MachNumber,
+    DragCoefficient,
+    AxialDragCoefficient,
+    NormalForceCoefficient,
+    Thrust,
+    Mass,
+    CGLocation,
+    CPLocation,
+    StabilityMargin,
+    ReynoldsNumber,
+    OrientationRoll,
+    OrientationPitch,
+    OrientationYaw,
+    PositionLatitude,
+    PositionLongitude,
+    Temperature,
+    Pressure,
+    Density,
+    WindVelocity,
+    EventFlags,
+    Custom(String),   // User-defined via CustomExpression
+}
+```
+
+---
+
+## 8. Crate: `federated-rocket-fileio`
+
+### 8.1 Purpose
+
+The `federated-rocket-fileio` crate handles **all file format import and export** for the application. It supports bidirectional OpenRocket `.ork`, legacy RockSim `.rkt`, RASAero II `.CDX1`, and various export formats (OBJ, SVG, CSV, PDF).
+
+### 8.2 Module Tree
+
+```
+fileio/
+├── lib.rs
+├── openrocket/
+│   ├── mod.rs
+│   ├── import.rs          -- OpenRocketLoader .ork file reader
+│   ├── export.rs          -- OpenRocketSaver .ork file writer
+│   ├── handler/           -- One handler per component type ~30 handlers
+│   │   ├── mod.rs
+│   │   ├── nosecone.rs    -- NoseConeHandler
+│   │   ├── body_tube.rs   -- BodyTubeHandler
+│   │   ├── transition.rs  -- TransitionHandler
+│   │   ├── fin_set.rs     -- FinSetHandler
+│   │   ├── trapezoid_fin.rs
+│   │   ├── elliptical_fin.rs
+│   │   ├── freeform_fin.rs
+│   │   ├── tube_fin.rs
+│   │   ├── parachute.rs
+│   │   ├── streamer.rs
+│   │   ├── launch_lug.rs
+│   │   ├── rail_button.rs
+│   │   ├── inner_tube.rs
+│   │   ├── centering_ring.rs
+│   │   ├── bulkhead.rs
+│   │   ├── engine_block.rs
+│   │   ├── tube_coupler.rs
+│   │   ├── mass_component.rs
+│   │   ├── mass_object.rs
+│   │   ├── shock_cord.rs
+│   │   ├── sleeve.rs
+│   │   ├── pod_set.rs
+│   │   ├── axial_stage.rs
+│   │   ├── parallel_stage.rs
+│   │   └── rocket.rs      -- Rocket root handler
+│   └── saver/             -- One saver per component type ~20 savers
+│       ├── mod.rs
+│       ├── nosecone.rs
+│       ├── body_tube.rs
+│       ├── transition.rs
+│       ├── fin_set.rs
+│       ├── parachute.rs
+│       ├── streamer.rs
+│       ├── launch_lug.rs
+│       ├── rail_button.rs
+│       ├── inner_tube.rs
+│       ├── centering_ring.rs
+│       ├── bulkhead.rs
+│       ├── engine_block.rs
+│       ├── tube_coupler.rs
+│       ├── mass_component.rs
+│       ├── mass_object.rs
+│       ├── shock_cord.rs
+│       ├── sleeve.rs
+│       └── stage.rs
+├── rocksim/
+│   ├── mod.rs
+│   ├── import.rs          -- RockSim .rkt reader
+│   └── export.rs          -- RockSim .rkt writer
+├── rasaero/
+│   ├── mod.rs
+│   ├── import.rs          -- RASAero II .cdx1 reader
+│   └── export.rs          -- RASAero II .cdx1 writer
+├── obj_export.rs          -- Wavefront OBJ exporter
+├── svg_export.rs          -- SVG exporter
+├── csv_export.rs          -- CSV exporter simulation data
+└── pdf_export.rs          -- PDF exporter fin guide, parts list
+```
+
+### 8.3 XML Strategy
+
+The `.ork` format uses ZIP-compressed XML. The Rust implementation uses a streaming approach:
+
+**XML parsing pipeline:**
+
+```rust
+/// OpenRocket .ork file format reader.
+/// Uses quick-xml streaming (event-based) parsing.
+/// Mapped from OpenRocketLoader.java.
+pub struct OpenRocketLoader {
+    /// Stack of parse context (current XML path)
+    context_stack: Vec<String>,
+    /// Current component handler being built
+    current_handler: Option<Box<dyn ComponentHandler>>,
+    /// Assembly state
+    document: OpenRocketDocument,
+    /// Material database from file
+    materials: Vec<Material>,
+}
+
+impl OpenRocketLoader {
+    pub fn load<R: Read>(reader: R) -> Result<OpenRocketDocument> {
+        // 1. Read ZIP container
+        // 2. Find the XML entry
+        // 3. Stream-parse XML with quick-xml
+        // 4. Dispatch elements to component handlers
+        // 5. Assemble component tree
+        // 6. Load simulation configurations
+        // 7. Return document
+    }
+}
+
+/// Handler trait for parsing a single component type from XML.
+/// Mapped from ComponentHandler.java pattern in OpenRocket.
+pub trait ComponentHandler: Debug {
+    /// Called when an XML element opens
+    fn open(&mut self, attrs: &[(&str, &str)]) -> Result<()>;
+    /// Called for character data within an element
+    fn text(&mut self, text: &str) -> Result<()>;
+    /// Called when an XML element closes
+    fn close(&mut self) -> Result<RocketComponent>;
+    /// The XML element name this handler handles
+    fn element_name(&self) -> &str;
+}
+
+/// Registry mapping XML element names to handler constructors.
+pub struct HandlerRegistry {
+    handlers: HashMap<String, Box<dyn Fn() -> Box<dyn ComponentHandler>>>,
+}
+
+impl HandlerRegistry {
+    pub fn new() -> Self {
+        let mut reg = HashMap::new();
+        reg.insert("nosecone".into(), Box::new(|| Box::new(NoseConeHandler::new())));
+        reg.insert("bodytube".into(), Box::new(|| Box::new(BodyTubeHandler::new())));
+        reg.insert("transition".into(), Box::new(|| Box::new(TransitionHandler::new())));
+        reg.insert("finset".into(), Box::new(|| Box::new(TrapezoidFinHandler::new())));
+        reg.insert("ellipticalfinset".into(), Box::new(|| Box::new(EllipticalFinHandler::new())));
+        reg.insert("freeformfinset".into(), Box::new(|| Box::new(FreeformFinHandler::new())));
+        reg.insert("tubefinset".into(), Box::new(|| Box::new(TubeFinHandler::new())));
+        reg.insert("parachute".into(), Box::new(|| Box::new(ParachuteHandler::new())));
+        reg.insert("streamer".into(), Box::new(|| Box::new(StreamerHandler::new())));
+        reg.insert("launchlug".into(), Box::new(|| Box::new(LaunchLugHandler::new())));
+        reg.insert("railbutton".into(), Box::new(|| Box::new(RailButtonHandler::new())));
+        reg.insert("innertube".into(), Box::new(|| Box::new(InnerTubeHandler::new())));
+        reg.insert("centeringring".into(), Box::new(|| Box::new(CenteringRingHandler::new())));
+        reg.insert("bulkhead".into(), Box::new(|| Box::new(BulkheadHandler::new())));
+        reg.insert("engineblock".into(), Box::new(|| Box::new(EngineBlockHandler::new())));
+        reg.insert("tubecoupler".into(), Box::new(|| Box::new(TubeCouplerHandler::new())));
+        reg.insert("masscomponent".into(), Box::new(|| Box::new(MassComponentHandler::new())));
+        reg.insert("massobject".into(), Box::new(|| Box::new(MassObjectHandler::new())));
+        reg.insert("shockcord".into(), Box::new(|| Box::new(ShockCordHandler::new())));
+        reg.insert("sleeve".into(), Box::new(|| Box::new(SleeveHandler::new())));
+        reg.insert("podset".into(), Box::new(|| Box::new(PodSetHandler::new())));
+        reg.insert("axialstage".into(), Box::new(|| Box::new(AxialStageHandler::new())));
+        reg.insert("parallelstage".into(), Box::new(|| Box::new(ParallelStageHandler::new())));
+        Self { handlers: reg }
+    }
+}
+```
+
+### 8.4 File Format Specifications
+
+**OpenRocket .ork format:**
+
+```
+.ork file (ZIP archive):
+├── [Content_Types].xml       (optional, for OPC compatibility)
+├── rocket.ork                (XML file containing the rocket design)
+│   └── XML structure:
+│       <openrocket>
+│           <rocket>
+│               <stage> ... </stage>             (component tree)
+│               <material> ... </material>       (shared materials)
+│           </rocket>
+│           <simulations>
+│               <simulation> ... </simulation>   (simulation configs)
+│           </simulations>
+│           <materials> ... </materials>          (materials)
+│           <customdata> ... </customdata>       (custom expressions)
+└── attachments/
+    ├── decal1.png             (embedded decal images)
+    └── motor1.eng             (embedded motor files)
+```
+
+- XML is stored uncompressed within the ZIP (the ZIP provides compression).
+- The ZIP may use no compression for the XML entry (stored method).
+- The root XML element is `<openrocket>`.
+- Component elements follow the naming convention: `<nosecone>`, `<bodytube>`, `<finset>`, etc.
+- Each component element contains child elements for each property: `<length>`, `<radius>`, `<shape>`, etc.
+- Position is specified via `<axialmethod>`, `<axialoffset>`, `<radialmethod>`, `<radialoffset>`, `<anglemethod>`, `<angleoffset>`.
+
+**RockSim .rkt format:**
+
+- Legacy format: fixed-field ASCII or binary depending on version.
+- Modern format: XML based.
+- Component type mapping requires conversion of RockSim-specific properties to OpenRocket equivalents.
+- See [`RockSimCommonConstants`](openrocket/core/src/main/java/info/openrocket/core/file/rocksim/RockSimCommonConstants.java) for mapping tables.
+
+**RASAero II .CDX1 format:**
+
+- XML-based format specific to RASAero II software.
+- Different component classification system — needs mapping to OpenRocket types.
+- Only rocket geometry imported; RASAero uses its own simulation model.
+
+**Export formats:**
+
+| Format | Library | Notes |
+|---|---|---|
+| Wavefront OBJ | Custom mesh generation | Tessellated geometry for all visible components |
+| SVG | Custom path generation | Fin templates, profile views, ring templates |
+| CSV | `csv` crate | Simulation time-series data |
+| PDF | `printpdf` or `genpdf` | Fin marking guide, parts list |
+
+---
+
+## 9. Crate: `federated-rocket-motor-db`
+
+### 9.1 Purpose
+
+The `federated-rocket-motor-db` crate manages **motor data**: local SQLite database, ThrustCurve.org API integration, thrust curve interpolation and scaling.
+
+### 9.2 Module Tree
+
+```
+motor-db/
+├── lib.rs
+├── thrust_curve.rs        -- ThrustCurve struct time/thrust data points
+├── motor.rs               -- Motor struct manufacturer, designation, type, delays
+├── motor_set.rs           -- ThrustCurveMotorSet grouping of related motors
+├── database.rs            -- MotorDatabase SQLite-backed storage
+├── interpolation.rs       -- Thrust curve interpolation
+├── scaling.rs             -- Motor thrust scaling
+└── api_client.rs          -- ThrustCurve.org REST API client
+```
+
+### 9.3 SQLite Schema
+
+The SQLite database schema is compatible with the [OpenRocket motor database schema](openrocket/docs/source/dev_guide/motor_database_schema.rst):
+
+```sql
+CREATE TABLE IF NOT EXISTS motors (
+    motor_id        INTEGER PRIMARY KEY AUTOINCREMENT,
+    manufacturer    TEXT NOT NULL,
+    designation     TEXT NOT NULL,
+    motor_type      TEXT NOT NULL,    -- SINGLE, RELOAD, HYBRID
+    diameter        REAL,             -- mm
+    length          REAL,             -- mm
+    total_impulse   REAL,             -- Ns
+    burn_time       REAL,             -- seconds
+    peak_thrust     REAL,             -- N
+    avg_thrust      REAL,             -- N
+    propellant      TEXT,
+    delays          TEXT,             -- comma-separated, e.g. "0,3,5,7"
+    case_info       TEXT,
+    data_source     TEXT,             -- "thrustcurve", "user", "file"
+    file_format     TEXT,             -- "RASP", "RockSim", "OpenRocket"
+    UNIQUE(manufacturer, designation, diameter, length)
+);
+
+CREATE TABLE IF NOT EXISTS thrust_curves (
+    curve_id        INTEGER PRIMARY KEY AUTOINCREMENT,
+    motor_id        INTEGER NOT NULL,
+    time_point      REAL NOT NULL,    -- seconds
+    thrust_value    REAL NOT NULL,    -- N
+    FOREIGN KEY (motor_id) REFERENCES motors(motor_id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS manufacturers (
+    manufacturer_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name            TEXT NOT NULL UNIQUE,
+    abbreviation    TEXT
+);
+
+CREATE INDEX idx_thrust_curves_motor ON thrust_curves(motor_id);
+CREATE INDEX idx_motors_manufacturer ON motors(manufacturer);
+CREATE INDEX idx_motors_designation ON motors(designation);
+
+-- Full-text search for motor lookup
+CREATE VIRTUAL TABLE IF NOT EXISTS motor_fts USING fts5(
+    manufacturer, designation, propellant,
+    content='motors',
+    content_rowid='motor_id'
+);
+```
+
+**Key types:**
+
+```rust
+/// A thrust curve defined by time/thrust data points.
+/// Mapped from ThrustCurveMotor.java.
+#[derive(Debug, Clone)]
+pub struct ThrustCurve {
+    pub motor_id: MotorId,
+    pub time_points: Vec<f64>,    // seconds
+    pub thrust_points: Vec<f64>,  // Newtons
+}
+
+impl ThrustCurve {
+    /// Interpolate thrust at a given time.
+    /// Uses linear interpolation between data points.
+    pub fn interpolate(&self, time: f64) -> f64 {
+        // ... linear interpolation
+    }
+
+    /// Total impulse (integral of thrust over time)
+    pub fn total_impulse(&self) -> f64 {
+        self.time_points.windows(2).enumerate()
+            .map(|(i, w)| (w[1] - w[0]) * (self.thrust_points[i] + self.thrust_points[i+1]) / 2.0)
+            .sum()
+    }
+
+    /// Average thrust over burn time
+    pub fn average_thrust(&self) -> f64 {
+        self.total_impulse() / self.burn_time()
+    }
+
+    /// Burn time (last time point - first time point)
+    pub fn burn_time(&self) -> f64 {
+        self.time_points.last().unwrap_or(&0.0) - self.time_points.first().unwrap_or(&0.0)
+    }
+
+    /// Peak thrust
+    pub fn peak_thrust(&self) -> f64 {
+        self.thrust_points.iter().cloned().fold(0.0_f64, f64::max)
+    }
+}
+
+/// A motor instance with metadata.
+/// Mapped from Motor.java and ThrustCurveMotor.java.
+#[derive(Debug, Clone)]
+pub struct Motor {
+    pub motor_id: MotorId,
+    pub manufacturer: Manufacturer,
+    pub designation: String,
+    pub motor_type: MotorType,          // Single, Reload, Hybrid
+    pub diameter_mm: f64,
+    pub length_mm: f64,
+    pub delays: Vec<Delay>,             // e.g., 0, 3, 5, 7, 10 seconds
+    pub propellant: Option<String>,
+    pub case_info: Option<String>,
+    pub thrust_curve: ThrustCurve,
+}
+
+/// Motor type classification.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum MotorType {
+    Single,    // Single-use motor
+    Reload,    // Reloadable motor casing
+    Hybrid,    // Hybrid motor
+    Unknown,
+}
+
+/// Motor delay (time between burnout and ejection charge firing).
+pub type Delay = f64;   // seconds, 0 = no delay, negative = plugged
+
+/// Manufacturer information.
+/// Mapped from Manufacturer.java.
+#[derive(Debug, Clone)]
+pub struct Manufacturer {
+    pub id: ManufacturerId,
+    pub name: String,
+    pub abbreviation: String,
+}
+
+/// ThrustCurve.org REST API client.
+/// Mapped from ThrustCurveAPI.java, SearchRequest.java, SearchResponse.java,
+/// DownloadRequest.java, DownloadResponse.java.
+pub struct ThrustCurveApiClient {
+    pub base_url: String,    // https://www.thrustcurve.org/api/v1
+    pub client: reqwest::Client,
+}
+
+impl ThrustCurveApiClient {
+    pub async fn search(&self, request: &SearchRequest) -> Result<SearchResponse> {
+        // GET /search?manufacturer=Estes&impulse_class=D&diameter=24
+    }
+
+    pub async fn download(&self, request: &DownloadRequest) -> Result<DownloadResponse> {
+        // GET /download?motor_id=12345&format=eng
+    }
+}
+```
+
+---
+
+## 10. Crate: `federated-rocket-optimization`
+
+### 10.1 Purpose
+
+The `federated-rocket-optimization` crate provides **design optimization algorithms** for finding optimal rocket parameters. Single-parameter (Golden Section) and multi-parameter (multidirectional search) are supported.
+
+### 10.2 Module Tree
+
+```
+optimization/
+├── lib.rs
+├── golden_section.rs      -- GoldenSectionSearchOptimizer
+├── multi_search.rs        -- MultidirectionalSearchOptimizer
+├── parameter.rs           -- OptimizableParameter trait
+├── goal.rs                -- OptimizationGoal trait
+└── results.rs             -- OptimizationResult
+```
+
+### 10.3 Algorithm Details
+
+**Golden Section Search** — Mapped from [`GoldenSectionSearchOptimizer.java`](openrocket/core/src/main/java/info/openrocket/core/optimization/general/onedim/GoldenSectionSearchOptimizer.java):
+
+```rust
+/// Golden section search for 1D optimization.
+/// Finds minimum of a unimodal function f(x) on interval [a, b].
+/// Algorithm:
+///   1. Place two interior points: x1 = b - (b-a)/phi, x2 = a + (b-a)/phi
+///      where phi = (1 + sqrt(5)) / 2 ≈ 1.618 (golden ratio)
+///   2. Evaluate f(x1) and f(x2)
+///   3. If f(x1) < f(x2): new interval is [a, x2]; x2 becomes new boundary
+///   4. Else: new interval is [x1, b]; x1 becomes new boundary
+///   5. Repeat until interval width < tolerance
+///      or function value change < tolerance
+///
+/// Constant: ALPHA = (sqrt(5) - 1) / 2 ≈ 0.618 (from Java source line 29)
+pub struct GoldenSectionSearchOptimizer {
+    function_executor: Box<dyn FunctionExecutor>,
+    tolerance: f64,
+    max_iterations: usize,
+}
+
+impl GoldenSectionSearchOptimizer {
+    const ALPHA: f64 = 0.618033988749895;   // (sqrt(5) - 1) / 2
+
+    pub fn optimize<F: Fn(f64) -> f64>(
+        &self,
+        f: F,
+        a: f64,
+        b: f64,
+    ) -> OptimizationResult {
+        let mut a = a;
+        let mut b = b;
+        let mut x1 = b - Self::ALPHA * (b - a);
+        let mut x2 = a + Self::ALPHA * (b - a);
+        let mut f1 = f(x1);
+        let mut f2 = f(x2);
+
+        for iteration in 0..self.max_iterations {
+            if (b - a).abs() < self.tolerance {
+                break;
+            }
+
+            if f1 < f2 {
+                b = x2;
+                x2 = x1;
+                f2 = f1;
+                x1 = b - Self::ALPHA * (b - a);
+                f1 = f(x1);
+            } else {
+                a = x1;
+                x1 = x2;
+                f1 = f2;
+                x2 = a + Self::ALPHA * (b - a);
+                f2 = f(x2);
+            }
+        }
+
+        let x_opt = (a + b) / 2.0;
+        OptimizationResult {
+            optimal_value: x_opt,
+            optimal_f: f(x_opt),
+            iterations: self.max_iterations,
+            converged: (b - a).abs() < self.tolerance,
+        }
+    }
+}
+```
+
+**Multidirectional Search** — Mapped from [`MultidirectionalSearchOptimizer.java`](openrocket/core/src/main/java/info/openrocket/core/optimization/general/multidim/MultidirectionalSearchOptimizer.java):
+
+```rust
+/// Multidirectional search for n-dimensional optimization.
+/// A direct search method that uses a simplex (n+1 points in n dimensions).
+///
+/// Algorithm:
+///   1. Start with initial simplex around the starting point
+///   2. At each iteration:
+///      a. Reflect the worst point through the centroid of the others
+///      b. If reflected point is better: expand further in that direction
+///      c. If reflected point is worse: contract toward centroid
+///      d. If contraction fails: shrink the simplex around the best point
+///   3. Stop when simplex size < tolerance or max iterations reached
+pub struct MultidirectionalSearchOptimizer {
+    tolerance: f64,
+    max_iterations: usize,
+}
+
+impl MultidirectionalSearchOptimizer {
+    const REFLECTION_COEFF: f64 = 1.0;
+    const EXPANSION_COEFF: f64 = 2.0;
+    const CONTRACTION_COEFF: f64 = 0.5;
+    const SHRINK_COEFF: f64 = 0.5;
+
+    pub fn optimize<F: Fn(&[f64]) -> f64>(
+        &self,
+        f: F,
+        initial: &[f64],
+        lower_bounds: &[f64],
+        upper_bounds: &[f64],
+    ) -> OptimizationResult {
+        // ... n-dimensional simplex optimization
+    }
+}
+```
+
+**`OptimizableParameter` trait** — Mapped from [`GenericComponentModifier.java`](openrocket/core/src/main/java/info/openrocket/core/optimization/rocketoptimization/modifiers/GenericComponentModifier.java):
+
+```rust
+/// A parameter that can be optimized.
+pub trait OptimizableParameter: Debug + Send + Sync {
+    fn name(&self) -> &str;
+    fn min_value(&self) -> f64;
+    fn max_value(&self) -> f64;
+    fn current_value(&self) -> f64;
+    fn set_value(&mut self, value: f64) -> Result<()>;
+    /// Optional: discrete values for categorical parameters (e.g., motor selection)
+    fn discrete_values(&self) -> Option<&[f64]> { None }
+}
+
+/// Built-in optimizable parameters:
+pub struct NoseConeLength(pub ComponentId);       // Optimize nose cone length
+pub struct BodyTubeLength(pub ComponentId);       // Optimize body tube length
+pub struct FinSpan(pub ComponentId);              // Optimize fin span
+pub struct FinRootChord(pub ComponentId);         // Optimize fin root chord
+pub struct ComponentPosition(pub ComponentId);    // Optimize axial position
+pub struct MassOverride(pub ComponentId, pub FlightConfigurationId); // Optimize mass override
+```
+
+**`OptimizationGoal` trait** — Mapped from OpenRocket's optimization goal pattern:
+
+```rust
+/// Optimization goal — defines what to optimize.
+pub trait OptimizationGoal: Debug + Send + Sync {
+    fn name(&self) -> &str;
+    fn direction(&self) -> GoalDirection;   // Maximize, Minimize, TargetValue
+    fn target_value(&self) -> Option<f64>;
+    fn evaluate(&self, simulation_results: &FlightData) -> f64;
+}
+
+pub enum GoalDirection {
+    Maximize,
+    Minimize,
+    TargetValue(f64),
+}
+
+/// Built-in optimization goals:
+pub struct MaxAltitude;                                                  // Maximize apogee
+pub struct MaxVelocity;                                                 // Maximize peak velocity
+pub struct StabilityMargin(pub f64);                                    // Target stability
+pub struct MinGroundHitVelocity;                                        // Minimize landing speed
+pub struct MinDeploymentVelocity;                                       // Minimize deployment speed
+pub struct MaxFlightTime;                                               // Maximize total flight time
+```
+
+**`OptimizationResult`:**
+
+```rust
+#[derive(Debug, Clone)]
+pub struct OptimizationResult {
+    pub optimal_value: f64,       // For 1D: the optimal x. For nD: first parameter.
+    pub optimal_values: Vec<f64>, // All parameter values at optimum
+    pub optimal_f: f64,           // Objective function value at optimum
+    pub iterations: usize,
+    pub converged: bool,
+}
+```
+
+---
+
+## 11. Crate: `federated-rocket-cli`
+
+### 11.1 Purpose
+
+The `federated-rocket-cli` crate provides a **headless command-line interface** for batch operations. It depends on all domain crates but NOT on the GUI crate. It uses `clap` for argument parsing.
+
+### 11.2 CLI Command Structure
+
+```rust
+/// CLI command hierarchy using clap derive API.
+#[derive(Parser)]
+#[command(name = "federated-rocket-cli")]
+#[command(about = "Model rocket simulation and design tool")]
+pub struct Cli {
+    #[command(subcommand)]
+    pub command: Command,
+}
+
+#[derive(Subcommand)]
+pub enum Command {
+    /// Run simulations on a rocket file
+    Sim {
+        /// Path to .ork file
+        file: String,
+        /// Specific simulation configuration to run
+        #[arg(short, long)]
+        config: Option<String>,
+        /// Output format (csv, json)
+        #[arg(short, long, default_value = "csv")]
+        format: String,
+        /// Output file path
+        #[arg(short, long)]
+        output: Option<String>,
+    },
+    /// Convert between file formats
+    Convert {
+        /// Input file path
+        input: String,
+        /// Output file path (auto-detect format from extension)
+        output: Option<String>,
+    },
+    /// Export rocket geometry
+    Export {
+        /// Input .ork file
+        file: String,
+        /// Export format (obj, svg)
+        #[arg(short, long)]
+        format: String,
+        /// Output directory
+        #[arg(short, long)]
+        output: Option<String>,
+    },
+    /// Print rocket information
+    Info {
+        /// Path to .ork file
+        file: String,
+        /// Show detailed component info
+        #[arg(short, long)]
+        verbose: bool,
+    },
+    /// Motor database operations
+    Motor {
+        #[command(subcommand)]
+        action: MotorCommand,
+    },
+}
+
+#[derive(Subcommand)]
+pub enum MotorCommand {
+    /// Search motor database
+    Search {
+        /// Search query (manufacturer or designation)
+        query: String,
+    },
+    /// Download motor from ThrustCurve.org
+    Download {
+        /// Motor ID on ThrustCurve.org
+        motor_id: String,
+    },
+    /// Import motor from .eng or .rse file
+    Import {
+        /// Path to motor file
+        file: String,
+    },
+    /// List all manufacturers
+    ListManufacturers,
+}
+```
+
+---
+
+## 12. Data Flow Design
+
+### 12.1 Startup Flow
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant CLI
+    participant FileIO
+    participant Core
+    participant MotorDB
+    participant Sim
+    participant Aero
+
+    User->>CLI: federated-rocket-cli sim rocket.ork
+    CLI->>FileIO: load_file rocket.ork
+    FileIO->>FileIO: ZIP decompression
+    FileIO->>FileIO: XML streaming parse
+    FileIO->>Core: OpenRocketDocument
+    Core->>Core: ComponentTree assembly
+    CLI->>MotorDB: init_database
+    MotorDB->>MotorDB: SQLite open/verify schema
+    CLI->>Sim: create_simulation_config
+    Sim->>Core: get FlightConfiguration
+    CLI->>Aero: create BarrowmanCalculator
+    CLI->>Sim: run_simulation
+    Sim->>Sim: initialize event queue
+    Sim->>Sim: enter integration loop
+    Sim->>Aero: getAerodynamicForces for each step
+    Aero-->>Sim: AerodynamicResult
+    Sim->>Sim: update FlightState
+    Sim->>Sim: check events
+    Sim->>Sim: log data
+    Sim-->>CLI: FlightData
+    CLI->>CLI: export results to CSV
+    CLI-->>User: Simulation complete
+```
+
+### 12.2 Simulation Data Flow
+
+```mermaid
+flowchart LR
+    subgraph "Per-Timestep Data Flow"
+        CONFIG["FlightConfiguration<br/>core"] --> FLIGHT_COND["FlightConditions<br/>aero"]
+        FLIGHT_COND --> AERO_CALC["BarrowmanCalculator<br/>aero"]
+        AERO_CALC --> FORCES["AerodynamicForces<br/>aero"]
+
+        CONFIG --> MOTORS["MotorState<br/>motor-db"]
+        MOTORS --> THRUST["Thrust calculation"]
+        THRUST --> TOTAL_F["Total Forces<br/>simulation"]
+
+        FORCES --> TOTAL_F
+        GRAVITY["GravityModel<br/>physics"] --> TOTAL_F
+        WIND["WindModel<br/>physics"] --> FLIGHT_COND
+        ATMO["AtmosphericModel<br/>physics"] --> FLIGHT_COND
+
+        TOTAL_F --> DERIV["6-DOF Derivatives<br/>simulation"]
+        DERIV --> STEPPER["RK4/RK6 Stepper<br/>simulation"]
+        STEPPER --> NEW_STATE["FlightState<br/>simulation"]
+        NEW_STATE --> FLIGHT_COND
+
+        NEW_STATE --> EVENTS["Event Detection<br/>simulation"]
+        EVENTS --> DATA_LOG["FlightDataBranch<br/>simulation"]
+    end
+```
+
+**Data flow for forces and moments assembly:**
+
+```
+Forces in body frame:
+  F_body = F_aero + F_thrust + F_gravity(body)
+
+Moments in body frame:
+  M_body = M_aero + M_thrust_off + M_damping
+
+Transform to world frame:
+  F_world = R(q) * F_body
+  M_world = R(q) * M_body
+
+6-DOF equations of motion:
+  dx/dt   = v                              (position derivative)
+  dv/dt   = F_world / m                    (velocity derivative)
+  dq/dt   = 0.5 * omega_body * q           (quaternion derivative)
+  domega/dt = I^-1 * (M - omega × I*omega) (angular acceleration)
+  dm/dt   = -mdot                          (mass derivative, motor burning)
+```
+
+---
+
+## 13. Error Handling Strategy
+
+federated-rocket uses a **layered error handling** approach aligned with the crate architecture:
+
+```mermaid
+flowchart TB
+    subgraph "Error Types by Layer"
+        APP["Application Layer<br/>anyhow::Error<br/>CLI: cli errors<br/>GUI: gui errors"]
+
+        DOMAIN["Domain Layer<br/>thiserror derive enums<br/>SimulationError {<br/>  IntegrationError<br/>  EventError<br/>  CoreError(from)<br/>  PhysicsError(from)<br/>}<br/>AeroError {<br/>  CalculationError<br/>  LookupError<br/>  CoreError(from)<br/>}<br/>FileIOError {<br/>  ParseError<br/>  FormatError<br/>  ZipError<br/>}<br/>MotorDBError {<br/>  DatabaseError<br/>  ApiError<br/>  NotFound<br/>}<br/>OptimizationError {<br/>  ConvergenceError<br/>  ParameterError<br/>}"]
+
+        FOUNDATION["Foundation Layer<br/>thiserror derive enums<br/>CoreError {<br/>  ComponentNotFound<br/>  InvalidPosition<br/>  TreeViolation<br/>  ConfigError<br/>}<br/>MathError {<br/>  SingularMatrix<br/>  InterpolationError<br/>  ConvergenceError<br/>}"]
+
+        APP --> DOMAIN
+        DOMAIN --> FOUNDATION
+    end
+```
+
+**Error conversion pattern:**
+
+```rust
+// In each domain crate, errors from lower crates are converted via #[from]:
+
+#[derive(Debug, thiserror::Error)]
+pub enum SimulationError {
+    #[error("Integration failed: {0}")]
+    IntegrationError(String),
+
+    #[error("Event handling failed: {0}")]
+    EventError(#[from] EventError),
+
+    #[error("Core component error: {0}")]
+    CoreError(#[from] CoreError),
+
+    #[error("Physics model error: {0}")]
+    PhysicsError(#[from] PhysicsError),
+
+    #[error("Aerodynamic calculation error: {0}")]
+    AeroError(#[from] AeroError),
+}
+
+// Result type alias:
+pub type SimResult<T> = Result<T, SimulationError>;
+
+// In application crates, use anyhow for aggregation:
+pub fn run_simulation(file_path: &str) -> anyhow::Result<FlightData> {
+    let doc = FileIO::load(file_path)
+        .context("Failed to load rocket file")?;
+    let sim = SimulationEngine::new()
+        .context("Failed to initialize simulation engine")?;
+    let result = sim.simulate(doc.active_config())
+        .context("Simulation failed")?;
+    Ok(result)
+}
+```
+
+**Error propagation across crate boundaries:**
+
+| Crate Boundary | Error Type | Propagation |
+|---|---|---|
+| `core` → `aero` | `CoreError` | `#[from]` conversion into `AeroError` |
+| `core` → `sim` | `CoreError` | `#[from]` conversion into `SimulationError` |
+| `core` → `fileio` | `CoreError` | `#[from]` conversion into `FileIOError` |
+| `core` → `motor-db` | `CoreError` | `#[from]` conversion into `MotorDBError` |
+| `math` → `aero` | `MathError` | `#[from]` conversion into `AeroError` |
+| `math` → `physics` | `MathError` | `#[from]` conversion into `PhysicsError` |
+| `aero` → `sim` | `AeroError` | `#[from]` conversion into `SimulationError` |
+| `physics` → `sim` | `PhysicsError` | `#[from]` conversion into `SimulationError` |
+| `sim` → `opt` | `SimulationError` | `#[from]` conversion into `OptimizationError` |
+| Any → CLI | All errors | `anyhow::Error` + `.context()` for rich messages |
+
+**Key design decisions:**
+
+1. **Foundation crates define their own errors** with `thiserror` — minimal, focused error types.
+2. **Domain crates wrap lower errors** with `#[from]` for automatic `?` propagation.
+3. **Application crates use `anyhow`** for top-level error formatting and user reporting.
+4. **No panics in library code** — all error conditions are captured in the type system.
+5. **`Result<T>` type aliases** are defined in each crate's public API.
+
+---
+
+## 14. Testing Strategy
+
+### 14.1 Unit Tests
+
+Unit tests are co-located with source code using Rust's `#[cfg(test)] mod tests` convention:
+
+```rust
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_nose_cone_cp_conical() {
+        let cp = nose_cp_fraction(TransitionShape::Conical, 0.0);
+        assert!((cp - 0.466).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_vector3d_cross_product() {
+        let v1 = Vector3d::new(1.0, 0.0, 0.0);
+        let v2 = Vector3d::new(0.0, 1.0, 0.0);
+        assert_eq!(v1.cross(v2), Vector3d::new(0.0, 0.0, 1.0));
+    }
+
+    #[test]
+    fn test_thrust_curve_interpolation() {
+        let curve = ThrustCurve {
+            time_points: vec![0.0, 1.0, 2.0],
+            thrust_points: vec![0.0, 100.0, 0.0],
+        };
+        assert!((curve.interpolate(0.5) - 50.0).abs() < 0.001);
+        assert!((curve.interpolate(1.5) - 50.0).abs() < 0.001);
+    }
+}
+```
+
+### 14.2 Integration Tests
+
+Integration tests reside in `tests/` directories at each crate root. Key integration scenarios:
+
+```rust
+#[cfg(test)]
+pub mod integration {
+    // Example: load .ork → simulate → compare with Java reference
+
+    #[test]
+    fn test_simulate_simple_rocket() {
+        // 1. Load reference .ork file
+        let doc = OpenRocketLoader::load("test_data/simplerocket.ork").unwrap();
+
+        // 2. Run simulation
+        let engine = BasicEventSimulationEngine::new();
+        let result = engine.simulate(doc.active_config()).unwrap();
+
+        // 3. Compare with reference data (generated from Java OpenRocket)
+        let reference = load_reference_data("test_data/simplerocket_ref.csv");
+        for (actual, expected) in result.data_points.iter().zip(reference.iter()) {
+            assert!((actual.altitude_agl - expected.altitude).abs() < expected.altitude * 0.001);
+            assert!((actual.velocity_total - expected.velocity).abs() < expected.velocity * 0.001);
+        }
+    }
+
+    #[test]
+    fn test_ork_round_trip() {
+        // 1. Load .ork file
+        let doc1 = OpenRocketLoader::load("test_data/complex_rocket.ork").unwrap();
+
+        // 2. Save to bytes
+        let mut buffer = Vec::new();
+        OpenRocketSaver::save(&doc1, &mut buffer).unwrap();
+
+        // 3. Re-load from bytes
+        let doc2 = OpenRocketLoader::load_reader(&buffer[..]).unwrap();
+
+        // 4. Compare component trees
+        assert_eq!(doc1.component_count(), doc2.component_count());
+        // ... deep comparison of all properties within floating-point tolerance
+    }
+}
+```
+
+### 14.3 Property-Based Testing
+
+Use `proptest` for invariant checking:
+
+```rust
+use proptest::prelude::*;
+
+proptest! {
+    #[test]
+    fn test_unit_conversion_roundtrip(
+        value_mm in 0.0..10000.0f64
+    ) {
+        // Convert mm to inches, then back to mm
+        let inches = UnitConverter::mm_to_inches(value_mm);
+        let back_to_mm = UnitConverter::inches_to_mm(inches);
+        assert!((value_mm - back_to_mm).abs() < 1e-10);
+    }
+
+    #[test]
+    fn test_quaternion_rotation_inverse(
+        angle in 0.0..std::f64::consts::TAU,
+        x in -10.0..10.0f64,
+        y in -10.0..10.0f64,
+        z in -10.0..10.0f64,
+    ) {
+        let q = Quaternion::from_axis_angle(Vector3d::new(1.0, 0.0, 0.0), angle);
+        let v = Vector3d::new(x, y, z);
+        let rotated = q.rotate(v);
+        let restored = q.inverse().rotate(rotated);
+        assert!((v - restored).norm() < 1e-10);
+    }
+
+    #[test]
+    fn test_golden_section_convex(
+        a in -10.0..0.0f64,
+        b in 0.0..10.0f64,
+    ) {
+        let opt = GoldenSectionSearchOptimizer::default();
+        // Minimize f(x) = x^2 (convex, minimum at 0)
+        let result = opt.optimize(|x| x * x, a, b);
+        assert!(result.optimal_value.abs() < 0.001);
+    }
+}
+```
+
+### 14.4 Golden File Tests
+
+For file I/O round-trips, use golden files (reference files checked into version control):
+
+```rust
+#[test]
+fn test_ork_golden_files() {
+    let golden_dir = std::path::Path::new("test_data/golden/");
+
+    for entry in std::fs::read_dir(golden_dir).unwrap() {
+        let path = entry.unwrap().path();
+        if path.extension().map_or(false, |e| e == "ork") {
+            // Load golden file
+            let doc = OpenRocketLoader::load(&path).unwrap();
+
+            // Re-save
+            let mut exported = Vec::new();
+            OpenRocketSaver::save(&doc, &mut exported).unwrap();
+
+            // Re-load round-tripped data
+            let doc2 = OpenRocketLoader::load_reader(&exported[..]).unwrap();
+
+            // Compare components
+            assert_eq!(doc.component_tree(), doc2.component_tree(),
+                "Golden file round-trip failed: {}", path.display());
+        }
+    }
+}
+```
+
+### 14.5 Performance Benchmarks
+
+Use `criterion` for CI-tracked benchmarks:
+
+```rust
+use criterion::{black_box, criterion_group, criterion_main, Criterion};
+
+pub fn bench_barrowman_calculation(c: &mut Criterion) {
+    let rocket = load_test_rocket();
+    let config = rocket.default_config();
+
+    c.bench_function("barrowman_cp_calculation", |b| {
+        b.iter(|| {
+            let aero = BarrowmanCalculator::new();
+            let result = aero.get_cp(black_box(&config), black_box(&Default::default()));
+            black_box(result);
+        })
+    });
+}
+
+pub fn bench_simulation(c: &mut Criterion) {
+    let rocket = load_test_rocket();
+    let config = rocket.default_config();
+    let engine = BasicEventSimulationEngine::new();
+
+    c.bench_function("simulate_100s_flight", |b| {
+        b.iter(|| {
+            let result = engine.simulate(black_box(&config));
+            black_box(result);
+        })
+    });
+}
+
+criterion_group!(benches, bench_barrowman_calculation, bench_simulation);
+criterion_main!(benches);
+```
+
+### 14.6 Test Coverage Targets
+
+| Module | Line Coverage | Branch Coverage | Notes |
+|---|---|---|---|
+| `core/units` | ≥ 80% | ≥ 70% | Conversion accuracy, boundary cases |
+| `core/component` | ≥ 70% | ≥ 60% | Tree operations, positioning, serialization |
+| `core/document` | ≥ 60% | ≥ 50% | Undo/redo edge cases |
+| `math` | ≥ 85% | ≥ 75% | Numerical accuracy critical |
+| `physics` | ≥ 70% | ≥ 60% | ISA table values, WGS84 formula |
+| `aero` | ≥ 75% | ≥ 65% | CP/CD comparison with Java reference |
+| `simulation` | ≥ 65% | ≥ 55% | Event handling, branching, edge cases |
+| `fileio` | ≥ 70% | ≥ 60% | Golden file tests, malformed input |
+| `motor-db` | ≥ 60% | ≥ 50% | SQLite operations, API mocking |
+| `optimization` | ≥ 70% | ≥ 60% | Convergence testing |
+
+**Test execution command:**
+
+```bash
+# Run all tests
+cargo test --workspace
+
+# Run tests with nocapture for debugging
+cargo test --workspace -- --nocapture
+
+# Run benchmarks
+cargo bench --workspace
+
+# Run with code coverage (using cargo-tarpaulin)
+cargo tarpaulin --workspace --out Html
+```
