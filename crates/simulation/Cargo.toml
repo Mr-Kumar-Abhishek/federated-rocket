@@ -14,3 +14,5 @@ federated-rocket-aero = { path = "../aero" }
 federated-rocket-math = { path = "../math" }
 serde.workspace = true
 thiserror.workspace = true
+csv.workspace = true
+serde_json.workspace = true
