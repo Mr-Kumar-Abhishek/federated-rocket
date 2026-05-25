@@ -12,6 +12,7 @@ use federated_rocket_physics::atmosphere::AtmosphericConditions;
 /// Orchestrates Barrowman method calculations with supersonic corrections
 /// to produce aerodynamic forces and coefficients for a rocket at given
 /// flight conditions.
+#[derive(Clone)]
 pub struct AeroCalculator {
     _barrowman: BarrowmanCalculator,
     _supersonic: SupersonicCorrections,

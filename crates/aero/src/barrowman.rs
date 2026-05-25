@@ -6,6 +6,7 @@ use federated_rocket_core::component_tree::*;
 /// Implements the classic Barrowman method for computing normal force
 /// coefficient derivatives and center of pressure positions for model
 /// rocket components.
+#[derive(Clone)]
 pub struct BarrowmanCalculator;
 
 /// Result of a single component's contribution to the total aerodynamics.

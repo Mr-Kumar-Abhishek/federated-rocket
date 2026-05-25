@@ -1,0 +1,17 @@
+[package]
+name = "federated-rocket-validation"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.80.0"
+description = "Numerical validation against Java OpenRocket reference data"
+
+[dependencies]
+federated-rocket-core = { path = "../core" }
+federated-rocket-math = { path = "../math" }
+federated-rocket-physics = { path = "../physics" }
+federated-rocket-aero = { path = "../aero" }
+federated-rocket-simulation = { path = "../simulation" }
+federated-rocket-fileio = { path = "../fileio" }
+federated-rocket-motor-db = { path = "../motor-db" }
+serde.workspace = true
+serde_json.workspace = true

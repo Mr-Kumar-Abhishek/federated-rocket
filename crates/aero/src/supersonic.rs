@@ -2,6 +2,7 @@ use crate::types::FlowRegime;
 
 /// Supersonic and compressibility correction factors for aerodynamic
 /// coefficients using analytic methods.
+#[derive(Clone)]
 pub struct SupersonicCorrections;
 
 impl SupersonicCorrections {

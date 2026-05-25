@@ -90,6 +90,27 @@ pub struct NoseConeData {
     pub blunt_radius: Quantity<f64>,
 }
 
+impl Default for NoseConeData {
+    fn default() -> Self {
+        Self {
+            name: String::new(),
+            position: Coordinate::origin(),
+            length: Quantity::new(0.0, crate::units::Unit::Meter),
+            base_radius: Quantity::new(0.0, crate::units::Unit::Meter),
+            shape: NoseConeShape::Conical,
+            thickness: Quantity::new(0.0, crate::units::Unit::Meter),
+            material: crate::material::get_material(crate::material::Material::KRAFT_TUBE).unwrap_or_else(|| {
+                crate::material::Material::new("Default", crate::material::MaterialType::Bulk, Quantity::new(700.0, crate::units::Unit::Kilogram))
+            }),
+            color: None,
+            shoulder_length: Quantity::new(0.0, crate::units::Unit::Meter),
+            shoulder_radius: Quantity::new(0.0, crate::units::Unit::Meter),
+            is_blunted: false,
+            blunt_radius: Quantity::new(0.0, crate::units::Unit::Meter),
+        }
+    }
+}
+
 /// Data for a transition (conical or curved body section) component.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TransitionData {
@@ -215,6 +236,28 @@ pub struct FinSetData {
     pub color: Option<String>,
     pub cant_angle: Quantity<f64>,
     pub fin_placement: FinPlacement,
+}
+
+impl Default for FinSetData {
+    fn default() -> Self {
+        Self {
+            name: String::new(),
+            position: Coordinate::origin(),
+            fin_count: 3,
+            root_chord: Quantity::new(0.0, crate::units::Unit::Meter),
+            tip_chord: Quantity::new(0.0, crate::units::Unit::Meter),
+            span: Quantity::new(0.0, crate::units::Unit::Meter),
+            sweep_length: Quantity::new(0.0, crate::units::Unit::Meter),
+            thickness: Quantity::new(0.0, crate::units::Unit::Meter),
+            cross_section: AirfoilType::Square,
+            material: crate::material::get_material(crate::material::Material::BALSA).unwrap_or_else(|| {
+                crate::material::Material::new("Default", crate::material::MaterialType::Bulk, Quantity::new(600.0, crate::units::Unit::Kilogram))
+            }),
+            color: None,
+            cant_angle: Quantity::new(0.0, crate::units::Unit::Degree),
+            fin_placement: FinPlacement::Normal,
+        }
+    }
 }
 
 /// Data for a freeform fin set with user-defined points.
