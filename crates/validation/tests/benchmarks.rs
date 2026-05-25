@@ -110,7 +110,6 @@ mod benchmarks {
 
     #[test]
     fn benchmark_file_io() {
-        
         use std::time::Instant;
 
         // Generate a minimal .ork file
@@ -144,8 +143,13 @@ mod benchmarks {
             }
             // Read back
             match std::fs::read_to_string(&path) {
-                Ok(content) => { let _ = content; }
-                Err(e) => panic!("Failed to read benchmark file (may be locked by antivirus): {}", e),
+                Ok(content) => {
+                    let _ = content;
+                }
+                Err(e) => panic!(
+                    "Failed to read benchmark file (may be locked by antivirus): {}",
+                    e
+                ),
             }
         }
 
