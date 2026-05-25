@@ -402,7 +402,7 @@ mod tests {
         let wind = model.wind_at_position(Vector3D::zero(), 0.0);
         assert!((wind.speed - 10.0).abs() < 1e-10);
         assert!((wind.velocity.x - 10.0).abs() < 1e-10); // North
-        assert!((wind.velocity.y - 0.0).abs() < 1e-10);  // East
+        assert!((wind.velocity.y - 0.0).abs() < 1e-10); // East
         assert!((wind.direction_azimuth - 0.0).abs() < 1e-10);
     }
 
@@ -411,7 +411,7 @@ mod tests {
         let model = ConstantWind::new(10.0, 90.0);
         let wind = model.wind_at_position(Vector3D::zero(), 0.0);
         assert!((wind.speed - 10.0).abs() < 1e-10);
-        assert!((wind.velocity.x - 0.0).abs() < 1e-10);  // North
+        assert!((wind.velocity.x - 0.0).abs() < 1e-10); // North
         assert!((wind.velocity.y - 10.0).abs() < 1e-10); // East
     }
 
@@ -446,14 +446,20 @@ mod tests {
         let model = PowerLawWind::new(10.0, 10.0, 0.0, 0.2);
         let wind_lo = model.wind_at_position(Vector3D::zero(), 5.0);
         let wind_hi = model.wind_at_position(Vector3D::zero(), 50.0);
-        assert!(wind_hi.speed > wind_lo.speed, "Wind should increase with height");
+        assert!(
+            wind_hi.speed > wind_lo.speed,
+            "Wind should increase with height"
+        );
     }
 
     #[test]
     fn test_power_law_zero_at_ground() {
         let model = PowerLawWind::new(10.0, 10.0, 0.0, 0.2);
         let wind = model.wind_at_position(Vector3D::zero(), 0.0);
-        assert!((wind.speed - 0.0).abs() < 1e-10, "Wind at ground should be zero");
+        assert!(
+            (wind.speed - 0.0).abs() < 1e-10,
+            "Wind at ground should be zero"
+        );
     }
 
     #[test]
@@ -463,7 +469,10 @@ mod tests {
         // At 1 m, should be roughly half of the value at 2 m
         assert!(wind_1m.speed > 0.0, "Wind at 1m should be positive");
         let wind_2m = model.wind_at_position(Vector3D::zero(), 2.0);
-        assert!(wind_1m.speed < wind_2m.speed, "Wind at 1m should be less than at 2m");
+        assert!(
+            wind_1m.speed < wind_2m.speed,
+            "Wind at 1m should be less than at 2m"
+        );
     }
 
     // --- LogarithmicWind ---
@@ -481,7 +490,10 @@ mod tests {
     fn test_log_wind_zero_below_roughness() {
         let model = LogarithmicWind::new(0.5, 0.1, 0.0);
         let wind = model.wind_at_position(Vector3D::zero(), 0.05);
-        assert!((wind.speed - 0.0).abs() < 1e-10, "Wind below z₀ should be zero");
+        assert!(
+            (wind.speed - 0.0).abs() < 1e-10,
+            "Wind below z₀ should be zero"
+        );
     }
 
     #[test]
@@ -489,14 +501,20 @@ mod tests {
         let model = LogarithmicWind::new(0.3, 0.03, 90.0);
         let wind_lo = model.wind_at_position(Vector3D::zero(), 5.0);
         let wind_hi = model.wind_at_position(Vector3D::zero(), 50.0);
-        assert!(wind_hi.speed > wind_lo.speed, "Wind should increase with height");
+        assert!(
+            wind_hi.speed > wind_lo.speed,
+            "Wind should increase with height"
+        );
     }
 
     #[test]
     fn test_log_wind_zero_roughness() {
         let model = LogarithmicWind::new(0.5, 0.0, 0.0);
         let wind = model.wind_at_position(Vector3D::zero(), 10.0);
-        assert!((wind.speed - 0.0).abs() < 1e-10, "Zero roughness should give zero wind");
+        assert!(
+            (wind.speed - 0.0).abs() < 1e-10,
+            "Zero roughness should give zero wind"
+        );
     }
 
     // --- WindGust ---
@@ -507,7 +525,10 @@ mod tests {
         let gust = WindGust::new(base, 5.0, 1.0, 10.0);
         gust.set_time(5.0); // Before gust_start_time
         let wind = gust.wind_at_position(Vector3D::zero(), 0.0);
-        assert!((wind.speed - 10.0).abs() < 1e-10, "No gust before start time");
+        assert!(
+            (wind.speed - 10.0).abs() < 1e-10,
+            "No gust before start time"
+        );
     }
 
     #[test]
@@ -559,7 +580,10 @@ mod tests {
         gust.set_time(10.0);
         gust.reset_time();
         let wind = gust.wind_at_position(Vector3D::zero(), 0.0);
-        assert!((wind.speed - 10.0).abs() < 1e-10, "After reset, no gust component");
+        assert!(
+            (wind.speed - 10.0).abs() < 1e-10,
+            "After reset, no gust component"
+        );
     }
 
     // --- Trait dispatch ---
@@ -574,7 +598,11 @@ mod tests {
         ];
         for model in &models {
             let wind = model.wind_at_position(Vector3D::zero(), 10.0);
-            assert!(wind.speed >= 0.0, "{} should have non-negative speed", model.name());
+            assert!(
+                wind.speed >= 0.0,
+                "{} should have non-negative speed",
+                model.name()
+            );
         }
     }
 }

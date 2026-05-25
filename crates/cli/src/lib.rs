@@ -1,3 +1,6 @@
+#![allow(clippy::empty_line_after_doc_comments)]
+#![allow(clippy::manual_retain)]
+
 pub mod commands;
 pub mod output;
 

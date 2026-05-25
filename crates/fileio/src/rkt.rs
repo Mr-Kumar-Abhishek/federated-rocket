@@ -94,11 +94,16 @@ fn parse_rocksim(reader: BufReader<std::fs::File>) -> Result<ComponentTree, RktE
             "$ROCKET_NAME" => {
                 // Root rocket assembly
                 let assembly = RocketComponent::ComponentAssembly(ComponentAssemblyData {
-                    name: if name.is_empty() { "Rocket".to_string() } else { name.to_string() },
+                    name: if name.is_empty() {
+                        "Rocket".to_string()
+                    } else {
+                        name.to_string()
+                    },
                     position: Coordinate::origin(),
                     color: None,
                 });
-                let key = tree.add_component(assembly, None)
+                let key = tree
+                    .add_component(assembly, None)
                     .map_err(|e| RktError::Parse(format!("Tree error: {:?}", e)))?;
                 assemblies.push(key);
             }
@@ -106,7 +111,11 @@ fn parse_rocksim(reader: BufReader<std::fs::File>) -> Result<ComponentTree, RktE
                 let parent = assemblies.last().copied();
                 let length_in = parse_field_f64(&fields, 2).unwrap_or(0.0);
                 let diameter_in = parse_field_f64(&fields, 3).unwrap_or(0.0);
-                let shape_name = if fields.len() > 4 { fields[4] } else { "Conical" };
+                let shape_name = if fields.len() > 4 {
+                    fields[4]
+                } else {
+                    "Conical"
+                };
 
                 let nose = RocketComponent::NoseCone(NoseConeData {
                     name: name.to_string(),
@@ -121,7 +130,11 @@ fn parse_rocksim(reader: BufReader<std::fs::File>) -> Result<ComponentTree, RktE
                         _ => NoseConeShape::Conical,
                     },
                     thickness: Quantity::new(0.002, Unit::Meter),
-                    material: Material::new("Polystyrene", MaterialType::Bulk, Quantity::new(1050.0, Unit::Kilogram)),
+                    material: Material::new(
+                        "Polystyrene",
+                        MaterialType::Bulk,
+                        Quantity::new(1050.0, Unit::Kilogram),
+                    ),
                     color: None,
                     shoulder_length: Quantity::new(0.0, Unit::Meter),
                     shoulder_radius: Quantity::new(0.0, Unit::Meter),
@@ -142,7 +155,11 @@ fn parse_rocksim(reader: BufReader<std::fs::File>) -> Result<ComponentTree, RktE
                     length: Quantity::new(length_in * 0.0254, Unit::Meter),
                     outer_radius: Quantity::new(diameter_in * 0.5 * 0.0254, Unit::Meter),
                     inner_radius: Quantity::new(diameter_in * 0.5 * 0.0254 - 0.001, Unit::Meter),
-                    material: Material::new("Cardboard", MaterialType::Bulk, Quantity::new(700.0, Unit::Kilogram)),
+                    material: Material::new(
+                        "Cardboard",
+                        MaterialType::Bulk,
+                        Quantity::new(700.0, Unit::Kilogram),
+                    ),
                     color: None,
                     has_motor_mount: false,
                 });
@@ -167,7 +184,11 @@ fn parse_rocksim(reader: BufReader<std::fs::File>) -> Result<ComponentTree, RktE
                     sweep_length: Quantity::new(sweep_in * 0.0254, Unit::Meter),
                     thickness: Quantity::new(0.003, Unit::Meter),
                     cross_section: AirfoilType::Square,
-                    material: Material::new("Balsa", MaterialType::Bulk, Quantity::new(160.0, Unit::Kilogram)),
+                    material: Material::new(
+                        "Balsa",
+                        MaterialType::Bulk,
+                        Quantity::new(160.0, Unit::Kilogram),
+                    ),
                     color: None,
                     cant_angle: Quantity::new(0.0, Unit::Degree),
                     fin_placement: FinPlacement::Normal,
@@ -184,7 +205,11 @@ fn parse_rocksim(reader: BufReader<std::fs::File>) -> Result<ComponentTree, RktE
                     position: Coordinate::origin(),
                     diameter: Quantity::new(diameter_in * 0.0254, Unit::Meter),
                     cd: 0.8,
-                    material: Material::new("Nylon", MaterialType::Bulk, Quantity::new(1150.0, Unit::Kilogram)),
+                    material: Material::new(
+                        "Nylon",
+                        MaterialType::Bulk,
+                        Quantity::new(1150.0, Unit::Kilogram),
+                    ),
                     color: None,
                 });
                 tree.add_component(chute, parent)
@@ -201,7 +226,11 @@ fn parse_rocksim(reader: BufReader<std::fs::File>) -> Result<ComponentTree, RktE
                     outer_radius: Quantity::new(diameter_in * 0.5 * 0.0254, Unit::Meter),
                     inner_radius: Quantity::new((diameter_in * 0.5 - 0.02) * 0.0254, Unit::Meter),
                     length: Quantity::new(length_in * 0.0254, Unit::Meter),
-                    material: Material::new("Plastic", MaterialType::Bulk, Quantity::new(1040.0, Unit::Kilogram)),
+                    material: Material::new(
+                        "Plastic",
+                        MaterialType::Bulk,
+                        Quantity::new(1040.0, Unit::Kilogram),
+                    ),
                     color: None,
                 });
                 tree.add_component(lug, parent)
@@ -216,7 +245,11 @@ fn parse_rocksim(reader: BufReader<std::fs::File>) -> Result<ComponentTree, RktE
                     position: Coordinate::origin(),
                     mass: Quantity::new(mass_oz * 0.0283495, Unit::Kilogram),
                     radius: Quantity::new(0.01, Unit::Meter),
-                    material: Material::new("Lead", MaterialType::Bulk, Quantity::new(11340.0, Unit::Kilogram)),
+                    material: Material::new(
+                        "Lead",
+                        MaterialType::Bulk,
+                        Quantity::new(11340.0, Unit::Kilogram),
+                    ),
                     color: None,
                 });
                 tree.add_component(mass, parent)
@@ -232,7 +265,11 @@ fn parse_rocksim(reader: BufReader<std::fs::File>) -> Result<ComponentTree, RktE
                     outer_radius: Quantity::new(diameter_in * 0.5 * 0.0254, Unit::Meter),
                     inner_radius: Quantity::new(0.0, Unit::Meter),
                     thickness: Quantity::new(0.003, Unit::Meter),
-                    material: Material::new("Plywood", MaterialType::Bulk, Quantity::new(600.0, Unit::Kilogram)),
+                    material: Material::new(
+                        "Plywood",
+                        MaterialType::Bulk,
+                        Quantity::new(600.0, Unit::Kilogram),
+                    ),
                     color: None,
                 });
                 tree.add_component(bh, parent)
@@ -249,7 +286,11 @@ fn parse_rocksim(reader: BufReader<std::fs::File>) -> Result<ComponentTree, RktE
                     length: Quantity::new(length_in * 0.0254, Unit::Meter),
                     width: Quantity::new(width_in * 0.0254, Unit::Meter),
                     cd: 1.0,
-                    material: Material::new("Mylar", MaterialType::Surface, Quantity::new(1390.0, Unit::Kilogram)),
+                    material: Material::new(
+                        "Mylar",
+                        MaterialType::Surface,
+                        Quantity::new(1390.0, Unit::Kilogram),
+                    ),
                     color: None,
                 });
                 tree.add_component(streamer, parent)
@@ -266,7 +307,11 @@ fn parse_rocksim(reader: BufReader<std::fs::File>) -> Result<ComponentTree, RktE
                     length: Quantity::new(length_in * 0.0254, Unit::Meter),
                     outer_radius: Quantity::new(diameter_in * 0.5 * 0.0254, Unit::Meter),
                     inner_radius: Quantity::new((diameter_in * 0.5 - 0.02) * 0.0254, Unit::Meter),
-                    material: Material::new("Cardboard", MaterialType::Bulk, Quantity::new(700.0, Unit::Kilogram)),
+                    material: Material::new(
+                        "Cardboard",
+                        MaterialType::Bulk,
+                        Quantity::new(700.0, Unit::Kilogram),
+                    ),
                     color: None,
                 });
                 tree.add_component(inner, parent)
@@ -282,7 +327,11 @@ fn parse_rocksim(reader: BufReader<std::fs::File>) -> Result<ComponentTree, RktE
                     position: Coordinate::origin(),
                     radius: Quantity::new(diameter_in * 0.5 * 0.0254, Unit::Meter),
                     length: Quantity::new(length_in * 0.0254, Unit::Meter),
-                    material: Material::new("Cardboard", MaterialType::Bulk, Quantity::new(700.0, Unit::Kilogram)),
+                    material: Material::new(
+                        "Cardboard",
+                        MaterialType::Bulk,
+                        Quantity::new(700.0, Unit::Kilogram),
+                    ),
                     color: None,
                 });
                 tree.add_component(eb, parent)
@@ -299,7 +348,11 @@ fn parse_rocksim(reader: BufReader<std::fs::File>) -> Result<ComponentTree, RktE
                     outer_radius: Quantity::new(od_in * 0.5 * 0.0254, Unit::Meter),
                     inner_radius: Quantity::new(id_in * 0.5 * 0.0254, Unit::Meter),
                     length: Quantity::new(0.005, Unit::Meter),
-                    material: Material::new("Plywood", MaterialType::Bulk, Quantity::new(600.0, Unit::Kilogram)),
+                    material: Material::new(
+                        "Plywood",
+                        MaterialType::Bulk,
+                        Quantity::new(600.0, Unit::Kilogram),
+                    ),
                     color: None,
                 });
                 tree.add_component(cr, parent)
@@ -319,7 +372,11 @@ fn parse_rocksim(reader: BufReader<std::fs::File>) -> Result<ComponentTree, RktE
                     aft_radius: Quantity::new(aft_diam_in * 0.5 * 0.0254, Unit::Meter),
                     shape: TransitionShape::Conical,
                     thickness: Quantity::new(0.002, Unit::Meter),
-                    material: Material::new("Cardboard", MaterialType::Bulk, Quantity::new(700.0, Unit::Kilogram)),
+                    material: Material::new(
+                        "Cardboard",
+                        MaterialType::Bulk,
+                        Quantity::new(700.0, Unit::Kilogram),
+                    ),
                     color: None,
                     shoulder_length: Quantity::new(0.0, Unit::Meter),
                     shoulder_radius: Quantity::new(0.0, Unit::Meter),
@@ -339,7 +396,8 @@ fn parse_rocksim(reader: BufReader<std::fs::File>) -> Result<ComponentTree, RktE
                     radius: Quantity::new(diameter_in * 0.5 * 0.0254, Unit::Meter),
                     color: None,
                 });
-                let pod_key = tree.add_component(pod, parent)
+                let pod_key = tree
+                    .add_component(pod, parent)
                     .map_err(|e| RktError::Parse(format!("Tree error: {:?}", e)))?;
                 assemblies.push(pod_key);
             }
@@ -367,15 +425,18 @@ fn write_rocksim_components(
     key: ComponentKey,
     _depth: usize,
 ) -> Result<(), RktError> {
-    let node = tree.get(key).ok_or_else(|| {
-        RktError::InvalidFormat("Component not found during write".to_string())
-    })?;
+    let node = tree
+        .get(key)
+        .ok_or_else(|| RktError::InvalidFormat("Component not found during write".to_string()))?;
 
     match &node.component {
         RocketComponent::BodyTube(data) => {
             let od_in = data.outer_radius.as_unit(Unit::Meter) / 0.0254 * 2.0;
             let len_in = data.length.as_unit(Unit::Meter) / 0.0254;
-            output.push_str(&format!("$BODY_TUBE|{}|{}|{}|||\n", data.name, len_in, od_in));
+            output.push_str(&format!(
+                "$BODY_TUBE|{}|{}|{}|||\n",
+                data.name, len_in, od_in
+            ));
         }
         RocketComponent::NoseCone(data) => {
             let len_in = data.length.as_unit(Unit::Meter) / 0.0254;
@@ -387,7 +448,10 @@ fn write_rocksim_components(
                 NoseConeShape::Parabolic => "4",
                 _ => "0",
             };
-            output.push_str(&format!("$NOSE_CONE|{}|{}|{}|{}||\n", data.name, len_in, od_in, shape_code));
+            output.push_str(&format!(
+                "$NOSE_CONE|{}|{}|{}|{}||\n",
+                data.name, len_in, od_in, shape_code
+            ));
         }
         RocketComponent::FinSet(data) => {
             let rc_in = data.root_chord.as_unit(Unit::Meter) / 0.0254;
@@ -425,7 +489,10 @@ fn write_rocksim_components(
             let l_in = data.length.as_unit(Unit::Meter) / 0.0254;
             let fd_in = data.fore_radius.as_unit(Unit::Meter) / 0.0254 * 2.0;
             let ad_in = data.aft_radius.as_unit(Unit::Meter) / 0.0254 * 2.0;
-            output.push_str(&format!("$TRANSITION|{}|{}|{}|{}||\n", data.name, l_in, fd_in, ad_in));
+            output.push_str(&format!(
+                "$TRANSITION|{}|{}|{}|{}||\n",
+                data.name, l_in, fd_in, ad_in
+            ));
         }
         RocketComponent::InnerTube(data) => {
             let l_in = data.length.as_unit(Unit::Meter) / 0.0254;
@@ -435,12 +502,18 @@ fn write_rocksim_components(
         RocketComponent::EngineBlock(data) => {
             let l_in = data.length.as_unit(Unit::Meter) / 0.0254;
             let d_in = data.radius.as_unit(Unit::Meter) / 0.0254 * 2.0;
-            output.push_str(&format!("$ENGINE_BLOCK|{}|{}|{}||\n", data.name, l_in, d_in));
+            output.push_str(&format!(
+                "$ENGINE_BLOCK|{}|{}|{}||\n",
+                data.name, l_in, d_in
+            ));
         }
         RocketComponent::CenteringRing(data) => {
             let od_in = data.outer_radius.as_unit(Unit::Meter) / 0.0254 * 2.0;
             let id_in = data.inner_radius.as_unit(Unit::Meter) / 0.0254 * 2.0;
-            output.push_str(&format!("$CENTERING_RING|{}|{}|{}||\n", data.name, od_in, id_in));
+            output.push_str(&format!(
+                "$CENTERING_RING|{}|{}|{}||\n",
+                data.name, od_in, id_in
+            ));
         }
         RocketComponent::Pod(data) => {
             let l_in = data.length.as_unit(Unit::Meter) / 0.0254;
@@ -488,7 +561,11 @@ $LAUNCH_LUG|Launch Lug|2.0|0.25||
         let tmp = std::env::temp_dir().join("test_rocket.rkt");
         std::fs::write(&tmp, rkt.as_bytes()).unwrap();
         let tree = RockSimFile::load(&tmp).expect("Should parse RockSim");
-        assert!(tree.component_count() >= 2, "Expected at least 2 components, got {}", tree.component_count());
+        assert!(
+            tree.component_count() >= 2,
+            "Expected at least 2 components, got {}",
+            tree.component_count()
+        );
         let _ = std::fs::remove_file(&tmp);
     }
 
@@ -496,26 +573,44 @@ $LAUNCH_LUG|Launch Lug|2.0|0.25||
     fn test_rkt_save_and_reload() {
         let mut tree = ComponentTree::new();
         let rocket = RocketComponent::ComponentAssembly(ComponentAssemblyData {
-            name: "My Rocket".into(), position: Coordinate::origin(), color: None,
+            name: "My Rocket".into(),
+            position: Coordinate::origin(),
+            color: None,
         });
         let root = tree.add_component(rocket, None).unwrap();
 
         let tube = RocketComponent::BodyTube(BodyTubeData {
-            name: "Body".into(), position: Coordinate::origin(),
-            length: Quantity::new(0.5, Unit::Meter), outer_radius: Quantity::new(0.02, Unit::Meter),
+            name: "Body".into(),
+            position: Coordinate::origin(),
+            length: Quantity::new(0.5, Unit::Meter),
+            outer_radius: Quantity::new(0.02, Unit::Meter),
             inner_radius: Quantity::new(0.018, Unit::Meter),
-            material: Material::new("Cardboard", MaterialType::Bulk, Quantity::new(700.0, Unit::Kilogram)),
-            color: None, has_motor_mount: false,
+            material: Material::new(
+                "Cardboard",
+                MaterialType::Bulk,
+                Quantity::new(700.0, Unit::Kilogram),
+            ),
+            color: None,
+            has_motor_mount: false,
         });
         tree.add_component(tube, Some(root)).unwrap();
 
         let nose = RocketComponent::NoseCone(NoseConeData {
-            name: "Nose".into(), position: Coordinate::origin(),
-            length: Quantity::new(0.1, Unit::Meter), base_radius: Quantity::new(0.02, Unit::Meter),
-            shape: NoseConeShape::Conical, thickness: Quantity::new(0.002, Unit::Meter),
-            material: Material::new("Polystyrene", MaterialType::Bulk, Quantity::new(1050.0, Unit::Kilogram)),
-            color: None, shoulder_length: Quantity::new(0.0, Unit::Meter),
-            shoulder_radius: Quantity::new(0.0, Unit::Meter), is_blunted: false,
+            name: "Nose".into(),
+            position: Coordinate::origin(),
+            length: Quantity::new(0.1, Unit::Meter),
+            base_radius: Quantity::new(0.02, Unit::Meter),
+            shape: NoseConeShape::Conical,
+            thickness: Quantity::new(0.002, Unit::Meter),
+            material: Material::new(
+                "Polystyrene",
+                MaterialType::Bulk,
+                Quantity::new(1050.0, Unit::Kilogram),
+            ),
+            color: None,
+            shoulder_length: Quantity::new(0.0, Unit::Meter),
+            shoulder_radius: Quantity::new(0.0, Unit::Meter),
+            is_blunted: false,
             blunt_radius: Quantity::new(0.0, Unit::Meter),
         });
         tree.add_component(nose, Some(root)).unwrap();
@@ -555,7 +650,11 @@ $MASS_COMPONENT|Mass|2.0|||
         let tmp = std::env::temp_dir().join("full_test.rkt");
         std::fs::write(&tmp, rkt).unwrap();
         let tree = RockSimFile::load(&tmp).expect("Should parse all types");
-        assert!(tree.component_count() >= 2, "Expected components, got {}", tree.component_count());
+        assert!(
+            tree.component_count() >= 2,
+            "Expected components, got {}",
+            tree.component_count()
+        );
         let _ = std::fs::remove_file(&tmp);
     }
 }

@@ -44,10 +44,7 @@ pub fn show(app: &mut FederatedRocketApp, ui: &mut egui::Ui) {
                 if ui.selectable_label(false, &label).clicked() {
                     app.status_message = format!(
                         "Selected: {} {} - {}N\u{00B7}s, {:.1}s burn",
-                        motor.manufacturer,
-                        motor.designation,
-                        motor.total_impulse,
-                        motor.burn_time
+                        motor.manufacturer, motor.designation, motor.total_impulse, motor.burn_time
                     );
                 }
             }

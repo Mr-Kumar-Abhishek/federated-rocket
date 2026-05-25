@@ -54,7 +54,10 @@ impl MotorCache {
 
     /// Check if a key exists in the cache.
     pub fn contains(&self, key: &str) -> bool {
-        self.motors.lock().ok().map_or(false, |cache| cache.contains_key(key))
+        self.motors
+            .lock()
+            .ok()
+            .map_or(false, |cache| cache.contains_key(key))
     }
 
     /// Return the number of entries in the cache.
@@ -109,7 +112,10 @@ mod tests {
             propellant_mass: 10.5,
             dry_mass: 11.0,
             delay_time: 5.0,
-            thrust_curve: vec![ThrustPoint { time: 0.0, thrust: 0.0 }],
+            thrust_curve: vec![ThrustPoint {
+                time: 0.0,
+                thrust: 0.0,
+            }],
             data_source: "test".to_string(),
         }
     }

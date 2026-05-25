@@ -44,35 +44,18 @@ pub fn run(args: MotorsArgs) -> anyhow::Result<()> {
 
     // Filter by manufacturer
     if let Some(ref mfr) = args.manufacturer {
-        motors = motors
-            .into_iter()
-            .filter(|m| {
-                m.manufacturer
-                    .to_lowercase()
-                    .contains(&mfr.to_lowercase())
-            })
-            .collect();
+        motors.retain(|m| m.manufacturer.to_lowercase().contains(&mfr.to_lowercase()));
     }
 
     // Filter by designation
     if let Some(ref desig) = args.designation {
-        motors = motors
-            .into_iter()
-            .filter(|m| {
-                m.designation
-                    .to_lowercase()
-                    .contains(&desig.to_lowercase())
-            })
-            .collect();
+        motors.retain(|m| m.designation.to_lowercase().contains(&desig.to_lowercase()));
     }
 
     // Filter by impulse class
     if let Some(ref class_str) = args.impulse_class {
         let class_upper = class_str.to_uppercase();
-        motors = motors
-            .into_iter()
-            .filter(|m| m.impulse_class().display_name() == class_upper)
-            .collect();
+        motors.retain(|m| m.impulse_class().display_name() == class_upper);
     }
 
     if args.json {
@@ -110,7 +93,11 @@ pub fn run(args: MotorsArgs) -> anyhow::Result<()> {
             } else {
                 println!(
                     "  {} {} ({} class) — {:.1}N·s, {:.1}s burn",
-                    motor.manufacturer, motor.designation, class, motor.total_impulse, motor.burn_time
+                    motor.manufacturer,
+                    motor.designation,
+                    class,
+                    motor.total_impulse,
+                    motor.burn_time
                 );
             }
         }

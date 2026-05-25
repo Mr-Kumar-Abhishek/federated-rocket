@@ -1,5 +1,5 @@
 use crate::ork::{OpenRocketFile, OrkError};
-use crate::rkt::{RockSimFile, RktError};
+use crate::rkt::{RktError, RockSimFile};
 use federated_rocket_core::component_tree::ComponentTree;
 use std::path::Path;
 
@@ -64,28 +64,20 @@ impl From<Box<dyn std::error::Error>> for FileIoError {
 /// or not yet implemented.
 pub fn load_rocket_file(path: &Path) -> Result<ComponentTree, FileIoError> {
     match detect_format(path) {
-        Some(RocketFileFormat::OpenRocket) => {
-            Ok(OpenRocketFile::load(path)?)
-        }
-        Some(RocketFileFormat::RockSim) => {
-            Ok(RockSimFile::load(path)?)
-        }
-        Some(RocketFileFormat::RASAero) => {
-            Err(FileIoError::Unsupported(
-                "RASAero (.rse) format is not yet implemented".to_string(),
-            ))
-        }
+        Some(RocketFileFormat::OpenRocket) => Ok(OpenRocketFile::load(path)?),
+        Some(RocketFileFormat::RockSim) => Ok(RockSimFile::load(path)?),
+        Some(RocketFileFormat::RASAero) => Err(FileIoError::Unsupported(
+            "RASAero (.rse) format is not yet implemented".to_string(),
+        )),
         Some(RocketFileFormat::RockSimXML) => {
             // RockSim XML format would use a different parser
             // For now, delegate to the basic RockSim parser
             Ok(RockSimFile::load(path)?)
         }
-        None => {
-            Err(FileIoError::Unsupported(format!(
-                "Unsupported file format: {}",
-                path.display()
-            )))
-        }
+        None => Err(FileIoError::Unsupported(format!(
+            "Unsupported file format: {}",
+            path.display()
+        ))),
     }
 }
 

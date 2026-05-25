@@ -46,7 +46,7 @@ impl Default for SimulationConfig {
         Self {
             time_step: 0.001,
             reference_area: std::f64::consts::PI * 0.0254 * 0.0254, // ~2 inch diameter tube
-            reference_diameter: 0.0508,                               // 2 inches in meters
+            reference_diameter: 0.0508,                             // 2 inches in meters
             max_time: 120.0,
             min_time_step: None,
             max_time_step: None,
@@ -203,9 +203,16 @@ impl SimulationEngine {
             }
 
             // 2. Launch rod clear
-            if launched && !rod_clear && fs.altitude() >= self.event_config.launch_rod_clear_altitude {
+            if launched
+                && !rod_clear
+                && fs.altitude() >= self.event_config.launch_rod_clear_altitude
+            {
                 rod_clear = true;
-                events.push(FlightEvent::new(FlightEventType::LaunchRodClear, &fs, accel));
+                events.push(FlightEvent::new(
+                    FlightEventType::LaunchRodClear,
+                    &fs,
+                    accel,
+                ));
             }
 
             // 3. Burntime start — first time step where the motor is burning
@@ -234,7 +241,9 @@ impl SimulationEngine {
             }
 
             // 5. Apogee detection
-            if !apogee_detected && launched && fs.altitude() < prev_altitude
+            if !apogee_detected
+                && launched
+                && fs.altitude() < prev_altitude
                 && prev_altitude > 10.0
                 && (prev_altitude - fs.altitude()) > self.event_config.apogee_detection_sensitivity
             {
@@ -257,17 +266,31 @@ impl SimulationEngine {
             // 7. Mach transition
             if !mach_crossed && fs.mach > 1.0 {
                 mach_crossed = true;
-                events.push(FlightEvent::new(FlightEventType::MachTransition, &fs, accel));
+                events.push(FlightEvent::new(
+                    FlightEventType::MachTransition,
+                    &fs,
+                    accel,
+                ));
             }
 
             // 8. Max velocity detection
-            if !max_vel_event && launched && fs.speed() < prev_speed && max_velocity > 10.0 && prev_speed > 0.0 {
+            if !max_vel_event
+                && launched
+                && fs.speed() < prev_speed
+                && max_velocity > 10.0
+                && prev_speed > 0.0
+            {
                 max_vel_event = true;
-                events.push(FlightEvent::new(FlightEventType::MaxVelocity, &prev_fs, accel));
+                events.push(FlightEvent::new(
+                    FlightEventType::MaxVelocity,
+                    &prev_fs,
+                    accel,
+                ));
             }
 
             // 9. Ground hit detection
-            if launched && fs.altitude() <= self.event_config.ground_altitude
+            if launched
+                && fs.altitude() <= self.event_config.ground_altitude
                 && fs.speed() < self.event_config.landing_detection_threshold
                 && t > 0.5
             {
@@ -313,7 +336,11 @@ impl SimulationEngine {
 
         // --- Simulation ended (time limit reached) ---
         let final_fs = compact_to_flight_state(&state, atmosphere, wind);
-        events.push(FlightEvent::new(FlightEventType::SimulationEnd, &final_fs, 0.0));
+        events.push(FlightEvent::new(
+            FlightEventType::SimulationEnd,
+            &final_fs,
+            0.0,
+        ));
         trajectory.push(final_fs.clone());
 
         SimulationResult {
@@ -356,7 +383,11 @@ impl AdaptiveSimulationEngine {
     ///
     /// The adaptive integrator parameters are taken from the `SimulationConfig`
     /// if provided, otherwise sensible defaults are used.
-    pub fn new(config: SimulationConfig, event_config: EventConfig, aero_calc: AeroCalculator) -> Self {
+    pub fn new(
+        config: SimulationConfig,
+        event_config: EventConfig,
+        aero_calc: AeroCalculator,
+    ) -> Self {
         Self {
             adaptive_integrator: AdaptiveRK4Integrator {
                 min_dt: config.min_time_step.unwrap_or(1e-6),
@@ -410,7 +441,10 @@ impl AdaptiveSimulationEngine {
             // Implements the same Richardson extrapolation logic as AdaptiveRK4Integrator::step_adaptive
             // but with a bounded loop instead of unbounded recursion.
             const MAX_ADAPTIVE_ITERATIONS: u32 = 20;
-            let mut adaptive_dt = dt.clamp(self.adaptive_integrator.min_dt, self.adaptive_integrator.max_dt);
+            let mut adaptive_dt = dt.clamp(
+                self.adaptive_integrator.min_dt,
+                self.adaptive_integrator.max_dt,
+            );
             let mut accepted = false;
             let mut next_state = state.clone();
             let mut actual_dt = adaptive_dt;
@@ -491,8 +525,12 @@ impl AdaptiveSimulationEngine {
 
                 if scale > 1.0 {
                     // Error too large, reduce step size and retry
-                    let dt_new = (adaptive_dt * self.adaptive_integrator.safety_factor * scale.powf(-0.25))
-                        .clamp(self.adaptive_integrator.min_dt, self.adaptive_integrator.max_dt);
+                    let dt_new =
+                        (adaptive_dt * self.adaptive_integrator.safety_factor * scale.powf(-0.25))
+                            .clamp(
+                                self.adaptive_integrator.min_dt,
+                                self.adaptive_integrator.max_dt,
+                            );
 
                     // If we can't reduce further, accept with a warning and use the best available
                     if (dt_new - adaptive_dt).abs() < 1e-18 {
@@ -510,7 +548,10 @@ impl AdaptiveSimulationEngine {
                     // Suggest next step size
                     let suggested_dt = if scale > 0.0 {
                         (adaptive_dt * self.adaptive_integrator.safety_factor * scale.powf(-0.2))
-                            .clamp(self.adaptive_integrator.min_dt, self.adaptive_integrator.max_dt)
+                            .clamp(
+                                self.adaptive_integrator.min_dt,
+                                self.adaptive_integrator.max_dt,
+                            )
                     } else {
                         (adaptive_dt * 2.0).min(self.adaptive_integrator.max_dt)
                     };
@@ -554,12 +595,13 @@ impl AdaptiveSimulationEngine {
             // === Enhanced Event Detection ===
 
             // 1. Launch — altitude > 0.01m
-            if events.iter().all(|e: &FlightEvent| e.event_type != FlightEventType::Launch)
+            if events
+                .iter()
+                .all(|e: &FlightEvent| e.event_type != FlightEventType::Launch)
                 && fs.altitude() > 0.01
             {
-                let launch_time = interpolate_event_time(
-                    prev_altitude, 0.01, fs.altitude(), t - dt, t, 0.01,
-                );
+                let launch_time =
+                    interpolate_event_time(prev_altitude, 0.01, fs.altitude(), t - dt, t, 0.01);
                 events.push(FlightEvent::new_with_time(
                     FlightEventType::Launch,
                     launch_time,
@@ -568,7 +610,9 @@ impl AdaptiveSimulationEngine {
             }
 
             // 2. Launch rod clear — altitude > rod_clear_altitude
-            if !events.iter().any(|e| e.event_type == FlightEventType::LaunchRodClear)
+            if !events
+                .iter()
+                .any(|e| e.event_type == FlightEventType::LaunchRodClear)
                 && fs.altitude() >= self.event_config.launch_rod_clear_altitude
             {
                 let rod_time = interpolate_event_time(
@@ -644,9 +688,8 @@ impl AdaptiveSimulationEngine {
             // 5. Mach transition
             if !mach_flag && fs.mach > 1.0 {
                 mach_flag = true;
-                let mach_time = interpolate_event_time(
-                    prev_speed, 340.294, fs.speed(), t - dt, t, 340.294,
-                );
+                let mach_time =
+                    interpolate_event_time(prev_speed, 340.294, fs.speed(), t - dt, t, 340.294);
                 events.push(FlightEvent::new_with_time(
                     FlightEventType::MachTransition,
                     mach_time,
@@ -743,15 +786,19 @@ mod tests {
     use federated_rocket_core::coordinate::Coordinate;
     use federated_rocket_core::material::{Material, MaterialType};
     use federated_rocket_core::units::{Quantity, Unit};
+    use federated_rocket_math::vector::Vector3D;
     use federated_rocket_physics::atmosphere::StandardAtmosphere;
     use federated_rocket_physics::gravity::ConstantGravity;
     use federated_rocket_physics::wind::NoWind;
-    use federated_rocket_math::vector::Vector3D;
 
     use super::*;
 
     fn make_test_material() -> Material {
-        Material::new("TestMaterial", MaterialType::Bulk, Quantity::new(800.0, Unit::Kilogram))
+        Material::new(
+            "TestMaterial",
+            MaterialType::Bulk,
+            Quantity::new(800.0, Unit::Kilogram),
+        )
     }
 
     fn make_test_rocket() -> ComponentTree {
@@ -1095,14 +1142,8 @@ mod tests {
             &gravity,
             &wind,
         );
-        let adaptive_result = adaptive_engine.simulate(
-            initial_state,
-            motor,
-            &tree,
-            &atmosphere,
-            &gravity,
-            &wind,
-        );
+        let adaptive_result =
+            adaptive_engine.simulate(initial_state, motor, &tree, &atmosphere, &gravity, &wind);
 
         // Both should produce successful simulations
         assert!(fixed_result.success);
@@ -1199,10 +1240,7 @@ mod tests {
             .iter()
             .find(|e| e.event_type == FlightEventType::Apogee)
         {
-            assert!(
-                apogee_event.time > 0.0,
-                "Apogee time should be positive"
-            );
+            assert!(apogee_event.time > 0.0, "Apogee time should be positive");
         }
 
         // The rocket should have positive altitude after launch with a motor
@@ -1303,6 +1341,9 @@ mod tests {
             .events
             .iter()
             .any(|e| e.event_type == FlightEventType::SimulationEnd);
-        assert!(has_sim_end, "Adaptive engine should have SimulationEnd event");
+        assert!(
+            has_sim_end,
+            "Adaptive engine should have SimulationEnd event"
+        );
     }
 }

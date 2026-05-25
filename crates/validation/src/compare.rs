@@ -53,11 +53,36 @@ impl SimulationComparator {
 
         // 1. Compare key metrics
         let metrics = [
-            ("Max Altitude", result.max_altitude, reference.max_altitude, self.tolerances.altitude_tolerance),
-            ("Max Velocity", result.max_velocity, reference.max_velocity, self.tolerances.velocity_tolerance),
-            ("Max Acceleration", result.max_acceleration, reference.max_acceleration, self.tolerances.acceleration_tolerance),
-            ("Flight Time", result.flight_time, reference.flight_time, self.tolerances.event_time_tolerance),
-            ("Apogee Time", result.apogee_time, reference.apogee_time, self.tolerances.event_time_tolerance),
+            (
+                "Max Altitude",
+                result.max_altitude,
+                reference.max_altitude,
+                self.tolerances.altitude_tolerance,
+            ),
+            (
+                "Max Velocity",
+                result.max_velocity,
+                reference.max_velocity,
+                self.tolerances.velocity_tolerance,
+            ),
+            (
+                "Max Acceleration",
+                result.max_acceleration,
+                reference.max_acceleration,
+                self.tolerances.acceleration_tolerance,
+            ),
+            (
+                "Flight Time",
+                result.flight_time,
+                reference.flight_time,
+                self.tolerances.event_time_tolerance,
+            ),
+            (
+                "Apogee Time",
+                result.apogee_time,
+                reference.apogee_time,
+                self.tolerances.event_time_tolerance,
+            ),
         ];
 
         for (metric_name, actual, ref_val, tol) in &metrics {
@@ -116,7 +141,8 @@ impl SimulationComparator {
 
         // 3. Overall pass/fail
         let any_failed = comparisons.iter().any(|c| !c.within_tolerance);
-        let overall_error = comparisons.iter()
+        let overall_error = comparisons
+            .iter()
             .map(|c| c.relative_error_percent.abs())
             .fold(0.0_f64, f64::max);
 
@@ -162,10 +188,9 @@ fn find_closest_point<'a>(
     trajectory: &'a [federated_rocket_simulation::state::FlightState],
     time: f64,
 ) -> Option<&'a federated_rocket_simulation::state::FlightState> {
-    trajectory.iter()
-        .min_by(|a, b| {
-            let da = (a.time - time).abs();
-            let db = (b.time - time).abs();
-            da.partial_cmp(&db).unwrap()
-        })
+    trajectory.iter().min_by(|a, b| {
+        let da = (a.time - time).abs();
+        let db = (b.time - time).abs();
+        da.partial_cmp(&db).unwrap()
+    })
 }

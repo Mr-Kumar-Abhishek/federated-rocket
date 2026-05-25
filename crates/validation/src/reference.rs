@@ -68,13 +68,13 @@ pub struct ValidationTolerances {
 impl Default for ValidationTolerances {
     fn default() -> Self {
         Self {
-            altitude_tolerance: 0.1,      // 0.1%
-            velocity_tolerance: 0.1,      // 0.1%
-            acceleration_tolerance: 0.5,  // 0.5%
+            altitude_tolerance: 0.1,     // 0.1%
+            velocity_tolerance: 0.1,     // 0.1%
+            acceleration_tolerance: 0.5, // 0.5%
             mach_tolerance: 0.01,
-            cp_tolerance: 0.005,          // 5mm
-            event_time_tolerance: 0.01,   // 10ms
-            stability_tolerance: 0.1,     // 0.1 calibers
+            cp_tolerance: 0.005,        // 5mm
+            event_time_tolerance: 0.01, // 10ms
+            stability_tolerance: 0.1,   // 0.1 calibers
         }
     }
 }

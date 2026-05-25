@@ -1,6 +1,5 @@
 /// Display formatting utilities for CLI output.
 /// All functions are public for downstream use.
-
 /// Format altitude for display
 #[allow(dead_code)]
 pub fn format_altitude(meters: f64) -> String {

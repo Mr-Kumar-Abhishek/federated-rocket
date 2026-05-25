@@ -22,10 +22,7 @@ pub fn run(args: ConvertArgs) -> anyhow::Result<()> {
     let output_format = detect_format(output_path)
         .ok_or_else(|| anyhow::anyhow!("Unsupported output format: {}", args.output))?;
 
-    println!(
-        "Converting from {:?} to {:?}",
-        input_format, output_format
-    );
+    println!("Converting from {:?} to {:?}", input_format, output_format);
 
     // Load from input format
     let tree = load_rocket_file(input_path)?;

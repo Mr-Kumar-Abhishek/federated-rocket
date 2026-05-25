@@ -59,10 +59,19 @@ impl CompactState {
     ) -> Self {
         Self {
             data: [
-                position.x, position.y, position.z,
-                velocity.x, velocity.y, velocity.z,
-                orientation.w, orientation.x, orientation.y, orientation.z,
-                angular_velocity.x, angular_velocity.y, angular_velocity.z,
+                position.x,
+                position.y,
+                position.z,
+                velocity.x,
+                velocity.y,
+                velocity.z,
+                orientation.w,
+                orientation.x,
+                orientation.y,
+                orientation.z,
+                angular_velocity.x,
+                angular_velocity.y,
+                angular_velocity.z,
             ],
             mass,
             propellant_mass,
@@ -162,7 +171,9 @@ impl Sub for CompactState {
 /// [`AdaptiveRK4Integrator::step_adaptive`] for error estimation.
 impl Normed for CompactState {
     fn norm_squared(&self) -> f64 {
-        self.data.iter().map(|x| x * x).sum::<f64>() + self.mass * self.mass + self.propellant_mass * self.propellant_mass
+        self.data.iter().map(|x| x * x).sum::<f64>()
+            + self.mass * self.mass
+            + self.propellant_mass * self.propellant_mass
     }
 }
 
@@ -341,10 +352,19 @@ pub fn compute_derivative(
     // Build derivative CompactState
     CompactState {
         data: [
-            vel.x, vel.y, vel.z,          // d(position)/dt = velocity
-            acceleration.x, acceleration.y, acceleration.z, // d(velocity)/dt
-            q_dot.w, q_dot.x, q_dot.y, q_dot.z, // d(quaternion)/dt
-            angular_accel.x, angular_accel.y, angular_accel.z, // d(omega)/dt
+            vel.x,
+            vel.y,
+            vel.z, // d(position)/dt = velocity
+            acceleration.x,
+            acceleration.y,
+            acceleration.z, // d(velocity)/dt
+            q_dot.w,
+            q_dot.x,
+            q_dot.y,
+            q_dot.z, // d(quaternion)/dt
+            angular_accel.x,
+            angular_accel.y,
+            angular_accel.z, // d(omega)/dt
         ],
         mass: mass_flow_rate,
         propellant_mass: mass_flow_rate,

@@ -22,12 +22,12 @@ pub struct InterferenceFactors {
 impl Default for InterferenceFactors {
     fn default() -> Self {
         Self {
-            fin_body: 1.15,        // ~15% increase in fin CNα due to body presence
+            fin_body: 1.15, // ~15% increase in fin CNα due to body presence
             nose_body: 1.0,
-            body_fin: 1.25,        // body affects fin lift by ~25%
+            body_fin: 1.25, // body affects fin lift by ~25%
             fin_fin: 1.0,
             transition: 1.0,
-            staging_gap: 0.95,     // staging gaps slightly reduce effectiveness
+            staging_gap: 0.95, // staging gaps slightly reduce effectiveness
             pod: 1.05,
         }
     }
@@ -36,7 +36,9 @@ impl Default for InterferenceFactors {
 /// Calculate fin-body interference using the method from Barrowman
 /// β = 1 + (r / (r + s)) where r = body radius, s = fin span
 pub fn fin_body_interference_factor(body_radius: f64, fin_span: f64) -> f64 {
-    if fin_span <= 0.0 { return 1.0; }
+    if fin_span <= 0.0 {
+        return 1.0;
+    }
     1.0 + body_radius / (body_radius + fin_span)
 }
 

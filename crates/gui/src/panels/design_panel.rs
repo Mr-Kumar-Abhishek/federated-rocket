@@ -34,14 +34,7 @@ pub fn show(app: &mut FederatedRocketApp, ui: &mut egui::Ui) {
                 // Safety: the tree is not mutated during rendering
                 let tree = unsafe { &*tree_ptr };
                 if let Some(root) = tree.root() {
-                    render_component_node(
-                        ui,
-                        &mut new_selection,
-                        tree,
-                        root,
-                        0,
-                        current_selection,
-                    );
+                    render_component_node(ui, &mut new_selection, tree, root, 0, current_selection);
                 } else {
                     ui.label("Empty rocket design");
                 }

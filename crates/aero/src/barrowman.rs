@@ -161,11 +161,7 @@ impl BarrowmanCalculator {
     /// X_cp = X_f + (cr * (cr + 2*ct)) / (3 * (cr + ct)) + (cr*ct + ct^2) / (6*(cr + ct))
     ///
     /// where X_f is the root leading edge axial position.
-    pub fn fin_cp_position(
-        x_root_le: f64,
-        root_chord: f64,
-        tip_chord: f64,
-    ) -> f64 {
+    pub fn fin_cp_position(x_root_le: f64, root_chord: f64, tip_chord: f64) -> f64 {
         let sum = root_chord + tip_chord;
         if sum <= 0.0 {
             return x_root_le;
@@ -184,10 +180,7 @@ impl BarrowmanCalculator {
     ///
     /// Returns (total_cn_alpha, total_cp_position_m)
     /// where total_cp_position is the weighted average CP (m from nose tip).
-    pub fn total_rocket_cn_alpha_and_cp(
-        tree: &ComponentTree,
-        ref_diameter: f64,
-    ) -> (f64, f64) {
+    pub fn total_rocket_cn_alpha_and_cp(tree: &ComponentTree, ref_diameter: f64) -> (f64, f64) {
         let mut total_cn_alpha = 0.0;
         let mut weighted_cp_sum = 0.0;
 
@@ -217,19 +210,18 @@ pub fn component_contribution(
             let length = *data.length.value();
             let diameter = *data.base_radius.value() * 2.0;
             let cn_alpha = BarrowmanCalculator::nose_cone_cn_alpha(&data.shape);
-            let cp_calibers = BarrowmanCalculator::nose_cone_cp_calibers(&data.shape, length, diameter);
+            let cp_calibers =
+                BarrowmanCalculator::nose_cone_cp_calibers(&data.shape, length, diameter);
             let cp_position = data.position.x + cp_calibers * ref_diameter;
             ComponentContribution {
                 cn_alpha,
                 cp_position,
             }
         }
-        RocketComponent::BodyTube(_data) => {
-            ComponentContribution {
-                cn_alpha: BarrowmanCalculator::body_tube_cn_alpha(),
-                cp_position: 0.0,
-            }
-        }
+        RocketComponent::BodyTube(_data) => ComponentContribution {
+            cn_alpha: BarrowmanCalculator::body_tube_cn_alpha(),
+            cp_position: 0.0,
+        },
         RocketComponent::Transition(data) => {
             let length = *data.length.value();
             let fore_diameter = *data.fore_radius.value() * 2.0;
@@ -258,11 +250,8 @@ pub fn component_contribution(
                 root_chord,
                 tip_chord,
             );
-            let cp_position = BarrowmanCalculator::fin_cp_position(
-                data.position.x,
-                root_chord,
-                tip_chord,
-            );
+            let cp_position =
+                BarrowmanCalculator::fin_cp_position(data.position.x, root_chord, tip_chord);
             ComponentContribution {
                 cn_alpha,
                 cp_position,
@@ -278,11 +267,8 @@ pub fn component_contribution(
                 root_chord,
                 tip_chord,
             );
-            let cp_position = BarrowmanCalculator::fin_cp_position(
-                data.position.x,
-                root_chord,
-                tip_chord,
-            );
+            let cp_position =
+                BarrowmanCalculator::fin_cp_position(data.position.x, root_chord, tip_chord);
             ComponentContribution {
                 cn_alpha,
                 cp_position,
@@ -382,8 +368,7 @@ pub fn total_drag_coefficient(
 
                 // Interference drag
                 let thickness = *data.thickness.value();
-                cd_total +=
-                    0.03 * (data.fin_count as f64 * thickness * root_chord) / ref_area;
+                cd_total += 0.03 * (data.fin_count as f64 * thickness * root_chord) / ref_area;
             }
             RocketComponent::FreeformFinSet(data) => {
                 let (rc, tc) = estimate_freeform_chords(data);
@@ -396,8 +381,7 @@ pub fn total_drag_coefficient(
                 };
                 cd_total += cf * (wet_fin / ref_area) * (1.0 + 2.0 * t_over_c);
                 let thickness = *data.thickness.value();
-                cd_total +=
-                    0.03 * (data.fin_count as f64 * thickness * rc) / ref_area;
+                cd_total += 0.03 * (data.fin_count as f64 * thickness * rc) / ref_area;
             }
             _ => {}
         }
@@ -503,20 +487,18 @@ pub fn base_drag_enhanced(mach: f64, _base_area_ratio: f64) -> f64 {
 }
 
 /// Enhanced skin friction coefficient (compressible flat plate)
-pub fn skin_friction_compressible(
-    reynolds: f64,
-    mach: f64,
-    recovery_temp_ratio: f64,
-) -> f64 {
-    if reynolds <= 0.0 { return 0.0; }
-    
+pub fn skin_friction_compressible(reynolds: f64, mach: f64, recovery_temp_ratio: f64) -> f64 {
+    if reynolds <= 0.0 {
+        return 0.0;
+    }
+
     // Incompressible turbulent skin friction (Schlichting)
     let cf_incomp = if reynolds < 1e5 {
         1.328 / reynolds.sqrt() // Laminar
     } else {
         0.074 / reynolds.powf(0.2) // Turbulent (Prandtl-Schlichting)
     };
-    
+
     // Compressibility correction
     if mach < 0.8 {
         cf_incomp / (1.0 + 0.144 * mach.powi(2)).powf(0.65)
@@ -531,11 +513,13 @@ pub fn skin_friction_compressible(
 
 /// Wave drag for nose cone (supersonic)
 pub fn wave_drag_nose(mach: f64, nose_fineness: f64, nose_type: &str) -> f64 {
-    if mach <= 1.0 { return 0.0; }
-    
+    if mach <= 1.0 {
+        return 0.0;
+    }
+
     let beta = (mach.powi(2) - 1.0).sqrt();
     let fn_ratio = nose_fineness; // L/D
-    
+
     match nose_type {
         "Conical" => {
             // Cone wave drag (Taylor-Maccoll)
@@ -563,10 +547,12 @@ pub fn wave_drag_nose(mach: f64, nose_fineness: f64, nose_type: &str) -> f64 {
 
 /// Wave drag for body tube (supersonic skin friction + pressure)
 pub fn wave_drag_body(mach: f64, length: f64, diameter: f64) -> f64 {
-    if mach <= 1.0 { return 0.0; }
+    if mach <= 1.0 {
+        return 0.0;
+    }
     let beta = (mach.powi(2) - 1.0).sqrt();
     let slenderness = length / diameter.max(1e-6);
-    
+
     // Body wave drag decreases with slenderness
     0.5 / (beta * slenderness)
 }
@@ -574,11 +560,13 @@ pub fn wave_drag_body(mach: f64, length: f64, diameter: f64) -> f64 {
 /// Boat-tail drag correction (for reducing base drag)
 pub fn boat_tail_drag(mach: f64, boat_tail_angle: f64, area_ratio: f64) -> f64 {
     let angle_deg = boat_tail_angle.to_degrees();
-    if angle_deg <= 1.0 { return 0.0; }
-    
+    if angle_deg <= 1.0 {
+        return 0.0;
+    }
+
     let base_drag_reduction = (1.0 - area_ratio) * 0.12;
     let boat_tail_drag_penalty = 0.002 * angle_deg * (1.0 + 0.5 * mach);
-    
+
     // Net: reduce if boat tail is gentle, increase if steep
     (boat_tail_drag_penalty - base_drag_reduction).max(0.0)
 }
@@ -602,33 +590,35 @@ pub fn total_drag_enhanced(
 ) -> f64 {
     // 1. Base drag
     let cd_base = base_drag_enhanced(mach, base_area_ratio);
-    
+
     // 2. Skin friction drag
     let cf = skin_friction_compressible(reynolds, mach, 0.89);
     let cd_friction = cf * wet_area_ratio;
-    
+
     // 3. Wave drag (supersonic)
     let cd_wave_nose = wave_drag_nose(mach, nose_fineness, nose_type);
     let cd_wave_body = wave_drag_body(mach, body_length, body_diameter);
     let cd_wave = cd_wave_nose + cd_wave_body;
-    
+
     // 4. Fin drag
     let fin_interference = match fin_count {
-        2 => 1.0, 3 => 1.1, 4 => 1.2, _ => 1.0 + 0.05 * fin_count as f64,
+        2 => 1.0,
+        3 => 1.1,
+        4 => 1.2,
+        _ => 1.0 + 0.05 * fin_count as f64,
     };
-    let cd_fin = cf * fin_wet_area_ratio * fin_interference
-        * (1.0 + 2.0 * fin_thickness_ratio);
-    
+    let cd_fin = cf * fin_wet_area_ratio * fin_interference * (1.0 + 2.0 * fin_thickness_ratio);
+
     // 5. Induced drag (due to AoA)
     let cd_induced = if angle_of_attack.abs() > 0.001 {
         angle_of_attack.powi(2) * 2.0 / (std::f64::consts::PI * 2.0)
     } else {
         0.0
     };
-    
+
     // 6. Boat tail drag
     let cd_boat = boat_tail_drag(mach, boat_tail_angle, base_area_ratio);
-    
+
     // 7. Staging gap drag
     let cd_staging = if staging_gap > 0.0 {
         let gap_ratio = staging_gap / body_diameter.max(1e-6);
@@ -636,7 +626,7 @@ pub fn total_drag_enhanced(
     } else {
         0.0
     };
-    
+
     cd_base + cd_friction + cd_wave + cd_fin + cd_induced + cd_boat + cd_staging
 }
 
@@ -704,7 +694,10 @@ mod enhanced_drag_tests {
     fn test_skin_friction_compressible_decreases_with_mach() {
         let cf_low = skin_friction_compressible(1e6, 0.2, 0.89);
         let cf_high = skin_friction_compressible(1e6, 0.7, 0.89);
-        assert!(cf_high < cf_low, "SFC should decrease with Mach due to compressibility");
+        assert!(
+            cf_high < cf_low,
+            "SFC should decrease with Mach due to compressibility"
+        );
     }
 
     // ======================================================================
@@ -798,7 +791,10 @@ mod enhanced_drag_tests {
     fn test_wave_drag_body_more_slender_less_drag() {
         let cd_stubby = wave_drag_body(2.0, 0.5, 0.04);
         let cd_slender = wave_drag_body(2.0, 1.0, 0.04);
-        assert!(cd_slender < cd_stubby, "More slender bodies should have less wave drag");
+        assert!(
+            cd_slender < cd_stubby,
+            "More slender bodies should have less wave drag"
+        );
     }
 
     // ======================================================================
@@ -831,64 +827,60 @@ mod enhanced_drag_tests {
     #[test]
     fn test_total_drag_enhanced_subsonic() {
         let cd = total_drag_enhanced(
-            0.3, 1e6, 1.0, 2.5, "Conical",
-            0.5, 0.04, 0.5, 0.2,
-            0.05, 4, 0.0, 0.0, 0.0,
+            0.3, 1e6, 1.0, 2.5, "Conical", 0.5, 0.04, 0.5, 0.2, 0.05, 4, 0.0, 0.0, 0.0,
         );
-        assert!(cd > 0.0, "Total drag should be positive at subsonic conditions");
+        assert!(
+            cd > 0.0,
+            "Total drag should be positive at subsonic conditions"
+        );
     }
 
     #[test]
     fn test_total_drag_enhanced_supersonic() {
         let cd = total_drag_enhanced(
-            2.0, 1e6, 1.0, 2.5, "Conical",
-            0.5, 0.04, 0.5, 0.2,
-            0.05, 4, 0.0, 0.0, 0.0,
+            2.0, 1e6, 1.0, 2.5, "Conical", 0.5, 0.04, 0.5, 0.2, 0.05, 4, 0.0, 0.0, 0.0,
         );
-        assert!(cd > 0.0, "Total drag should be positive at supersonic conditions");
+        assert!(
+            cd > 0.0,
+            "Total drag should be positive at supersonic conditions"
+        );
     }
 
     #[test]
     fn test_total_drag_enhanced_supersonic_greater_than_subsonic() {
         let cd_sub = total_drag_enhanced(
-            0.5, 1e6, 1.0, 2.5, "Conical",
-            0.5, 0.04, 0.5, 0.2,
-            0.05, 4, 0.0, 0.0, 0.0,
+            0.5, 1e6, 1.0, 2.5, "Conical", 0.5, 0.04, 0.5, 0.2, 0.05, 4, 0.0, 0.0, 0.0,
         );
         let cd_sup = total_drag_enhanced(
-            2.0, 1e6, 1.0, 2.5, "Conical",
-            0.5, 0.04, 0.5, 0.2,
-            0.05, 4, 0.0, 0.0, 0.0,
+            2.0, 1e6, 1.0, 2.5, "Conical", 0.5, 0.04, 0.5, 0.2, 0.05, 4, 0.0, 0.0, 0.0,
         );
-        assert!(cd_sup > cd_sub, "Supersonic drag should exceed subsonic drag");
+        assert!(
+            cd_sup > cd_sub,
+            "Supersonic drag should exceed subsonic drag"
+        );
     }
 
     #[test]
     fn test_total_drag_enhanced_includes_induced() {
         let cd_zero_aoa = total_drag_enhanced(
-            1.0, 1e6, 1.0, 2.5, "Conical",
-            0.5, 0.04, 0.5, 0.2,
-            0.05, 4, 0.0, 0.0, 0.0,
+            1.0, 1e6, 1.0, 2.5, "Conical", 0.5, 0.04, 0.5, 0.2, 0.05, 4, 0.0, 0.0, 0.0,
         );
         let cd_with_aoa = total_drag_enhanced(
-            1.0, 1e6, 1.0, 2.5, "Conical",
-            0.5, 0.04, 0.5, 0.2,
-            0.05, 4, 0.1, 0.0, 0.0,
+            1.0, 1e6, 1.0, 2.5, "Conical", 0.5, 0.04, 0.5, 0.2, 0.05, 4, 0.1, 0.0, 0.0,
         );
-        assert!(cd_with_aoa > cd_zero_aoa, "Drag should increase with angle of attack");
+        assert!(
+            cd_with_aoa > cd_zero_aoa,
+            "Drag should increase with angle of attack"
+        );
     }
 
     #[test]
     fn test_total_drag_enhanced_staging_gap() {
         let cd_no_gap = total_drag_enhanced(
-            1.0, 1e6, 1.0, 2.5, "Conical",
-            0.5, 0.04, 0.5, 0.2,
-            0.05, 4, 0.0, 0.0, 0.0,
+            1.0, 1e6, 1.0, 2.5, "Conical", 0.5, 0.04, 0.5, 0.2, 0.05, 4, 0.0, 0.0, 0.0,
         );
         let cd_with_gap = total_drag_enhanced(
-            1.0, 1e6, 1.0, 2.5, "Conical",
-            0.5, 0.04, 0.5, 0.2,
-            0.05, 4, 0.0, 0.0, 0.05,
+            1.0, 1e6, 1.0, 2.5, "Conical", 0.5, 0.04, 0.5, 0.2, 0.05, 4, 0.0, 0.0, 0.05,
         );
         assert!(cd_with_gap > cd_no_gap, "Staging gap should increase drag");
     }
@@ -896,11 +888,12 @@ mod enhanced_drag_tests {
     #[test]
     fn test_total_drag_enhanced_all_components_positive() {
         let cd = total_drag_enhanced(
-            1.5, 2e6, 0.8, 3.0, "Ogive",
-            1.0, 0.08, 0.6, 0.25,
-            0.04, 3, 0.05, 0.08, 0.02,
+            1.5, 2e6, 0.8, 3.0, "Ogive", 1.0, 0.08, 0.6, 0.25, 0.04, 3, 0.05, 0.08, 0.02,
         );
-        assert!(cd > 0.0, "Total drag should be positive with all components");
+        assert!(
+            cd > 0.0,
+            "Total drag should be positive with all components"
+        );
         assert!(cd.is_finite(), "Total drag should be finite");
     }
 }
@@ -938,7 +931,11 @@ mod tests {
         ];
         for shape in &shapes {
             let cn = BarrowmanCalculator::nose_cone_cn_alpha(shape);
-            assert!((cn - 2.0).abs() < 1e-12, "CNα for {:?} should be 2.0", shape);
+            assert!(
+                (cn - 2.0).abs() < 1e-12,
+                "CNα for {:?} should be 2.0",
+                shape
+            );
         }
     }
 
@@ -946,14 +943,24 @@ mod tests {
     fn test_nose_cone_cp_conical() {
         let cp = BarrowmanCalculator::nose_cone_cp_calibers(&NoseConeShape::Conical, 0.2, 0.04);
         let expected = 0.666 * 0.2 / 0.04;
-        assert!((cp - expected).abs() < 1e-6, "Conical CP: {} vs {}", cp, expected);
+        assert!(
+            (cp - expected).abs() < 1e-6,
+            "Conical CP: {} vs {}",
+            cp,
+            expected
+        );
     }
 
     #[test]
     fn test_nose_cone_cp_ogive() {
         let cp = BarrowmanCalculator::nose_cone_cp_calibers(&NoseConeShape::Ogive, 0.2, 0.04);
         let expected = 0.534 * 0.2 / 0.04;
-        assert!((cp - expected).abs() < 1e-6, "Ogive CP: {} vs {}", cp, expected);
+        assert!(
+            (cp - expected).abs() < 1e-6,
+            "Ogive CP: {} vs {}",
+            cp,
+            expected
+        );
     }
 
     #[test]
@@ -973,11 +980,8 @@ mod tests {
     #[test]
     fn test_nose_cone_cp_power_series() {
         let n = 0.5;
-        let cp = BarrowmanCalculator::nose_cone_cp_calibers(
-            &NoseConeShape::PowerSeries(n),
-            0.2,
-            0.04,
-        );
+        let cp =
+            BarrowmanCalculator::nose_cone_cp_calibers(&NoseConeShape::PowerSeries(n), 0.2, 0.04);
         let expected = (n / (2.0 * n + 1.0)) * 0.2 / 0.04;
         assert!((cp - expected).abs() < 1e-6);
     }
@@ -992,11 +996,8 @@ mod tests {
     #[test]
     fn test_nose_cone_cp_haack_series() {
         let n = 0.333;
-        let cp = BarrowmanCalculator::nose_cone_cp_calibers(
-            &NoseConeShape::HaackSeries(n),
-            0.2,
-            0.04,
-        );
+        let cp =
+            BarrowmanCalculator::nose_cone_cp_calibers(&NoseConeShape::HaackSeries(n), 0.2, 0.04);
         let expected = (n / (2.0 * n + 1.0)) * 0.2 / 0.04;
         assert!((cp - expected).abs() < 1e-6);
     }
@@ -1044,7 +1045,12 @@ mod tests {
         let inner: f64 = (2.0 * mean_chord / (0.08 + 0.04)).powi(2);
         let denom: f64 = 1.0 + (1.0 + inner).sqrt();
         let expected = (4.0 * 4.0 * s_over_d * s_over_d) / denom;
-        assert!((cn - expected).abs() < 1e-6, "Fin CNα: {} vs {}", cn, expected);
+        assert!(
+            (cn - expected).abs() < 1e-6,
+            "Fin CNα: {} vs {}",
+            cn,
+            expected
+        );
     }
 
     #[test]
@@ -1060,7 +1066,12 @@ mod tests {
         let term1 = (0.08 * (0.08 + 2.0 * 0.04)) / (3.0 * sum);
         let term2 = (0.08 * 0.04 + 0.04 * 0.04) / (6.0 * sum);
         let expected = 0.5 + term1 + term2;
-        assert!((cp - expected).abs() < 1e-6, "Fin CP: {} vs {}", cp, expected);
+        assert!(
+            (cp - expected).abs() < 1e-6,
+            "Fin CP: {} vs {}",
+            cp,
+            expected
+        );
     }
 
     // ======================================================================
@@ -1161,8 +1172,7 @@ mod tests {
         });
         tree.add_component(nc, None).unwrap();
 
-        let (total_cn, total_cp) =
-            BarrowmanCalculator::total_rocket_cn_alpha_and_cp(&tree, 0.04);
+        let (total_cn, total_cp) = BarrowmanCalculator::total_rocket_cn_alpha_and_cp(&tree, 0.04);
         assert!((total_cn - 2.0).abs() < 1e-10);
         assert!((total_cp - 0.1332).abs() < 1e-6);
     }
@@ -1203,9 +1213,12 @@ mod tests {
         });
         tree.add_component(fins, None).unwrap();
 
-        let (total_cn, total_cp) =
-            BarrowmanCalculator::total_rocket_cn_alpha_and_cp(&tree, 0.04);
-        assert!(total_cn > 2.0, "Total CNα should be > 2.0, got {}", total_cn);
+        let (total_cn, total_cp) = BarrowmanCalculator::total_rocket_cn_alpha_and_cp(&tree, 0.04);
+        assert!(
+            total_cn > 2.0,
+            "Total CNα should be > 2.0, got {}",
+            total_cn
+        );
         assert!(total_cp > 0.1, "Total CP should be > 0.1, got {}", total_cp);
         assert!(total_cp < 0.8, "Total CP should be < 0.8, got {}", total_cp);
     }

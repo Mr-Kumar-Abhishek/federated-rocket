@@ -194,7 +194,10 @@ mod tests {
         let model = InverseSquareGravity::new();
         let g0 = model.acceleration_at_altitude(0.0);
         let g_neg = model.acceleration_at_altitude(-1000.0);
-        assert!((g_neg - g0).abs() < 1e-10, "Negative altitude should clamp to sea level");
+        assert!(
+            (g_neg - g0).abs() < 1e-10,
+            "Negative altitude should clamp to sea level"
+        );
     }
 
     // --- Wgs84Gravity ---

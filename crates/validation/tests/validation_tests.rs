@@ -90,12 +90,14 @@ fn test_hpr_rocket_validation() {
     println!("  Flight time: {:.1}s", result.flight_time);
 
     assert!(result.max_altitude > 0.0);
-    assert!(
-        result.events.iter().any(|e| e.event_type == FlightEventType::Launch)
-    );
-    assert!(
-        result.events.iter().any(|e| e.event_type == FlightEventType::Apogee)
-    );
+    assert!(result
+        .events
+        .iter()
+        .any(|e| e.event_type == FlightEventType::Launch));
+    assert!(result
+        .events
+        .iter()
+        .any(|e| e.event_type == FlightEventType::Apogee));
 }
 
 #[test]
@@ -134,9 +136,10 @@ fn test_min_diameter_validation() {
     println!("  Flight time: {:.1}s", result.flight_time);
 
     assert!(result.max_altitude > 0.0);
-    assert!(
-        result.events.iter().any(|e| e.event_type == FlightEventType::Launch)
-    );
+    assert!(result
+        .events
+        .iter()
+        .any(|e| e.event_type == FlightEventType::Launch));
 }
 
 #[test]
@@ -198,14 +201,8 @@ fn test_self_consistency() {
         },
         aero_calc,
     );
-    let result_fine = engine_fine.simulate(
-        initial.clone(),
-        None,
-        &tree,
-        &atmosphere,
-        &gravity,
-        &wind,
-    );
+    let result_fine =
+        engine_fine.simulate(initial.clone(), None, &tree, &atmosphere, &gravity, &wind);
 
     // Run with coarse step
     let config_coarse = SimulationConfig {
@@ -239,8 +236,6 @@ fn test_self_consistency() {
             alt_diff
         );
     } else {
-        println!(
-            "Self-consistency check: skipped (no motor — both results at zero altitude)"
-        );
+        println!("Self-consistency check: skipped (no motor — both results at zero altitude)");
     }
 }

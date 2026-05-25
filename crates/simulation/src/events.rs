@@ -66,11 +66,7 @@ impl FlightEvent {
     ///
     /// The acceleration parameter is passed separately because it requires
     /// a time derivative that the state alone does not carry.
-    pub fn new(
-        event_type: FlightEventType,
-        state: &FlightState,
-        acceleration: f64,
-    ) -> Self {
+    pub fn new(event_type: FlightEventType, state: &FlightState, acceleration: f64) -> Self {
         // Build a default description based on event type
         let description = match event_type {
             FlightEventType::Launch => "Rocket launched".to_string(),
@@ -108,11 +104,7 @@ impl FlightEvent {
     ///
     /// This is used when event detection occurs at a time between simulation steps,
     /// such as when using bisection or interpolation for more accurate event timing.
-    pub fn new_with_time(
-        event_type: FlightEventType,
-        time: f64,
-        state: &FlightState,
-    ) -> Self {
+    pub fn new_with_time(event_type: FlightEventType, time: f64, state: &FlightState) -> Self {
         let description = match event_type {
             FlightEventType::Launch => "Rocket launched".to_string(),
             FlightEventType::LaunchRodClear => "Launch rod cleared".to_string(),

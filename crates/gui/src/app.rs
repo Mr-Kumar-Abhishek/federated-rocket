@@ -3,7 +3,10 @@ use federated_rocket_core::component_tree::ComponentKey;
 use federated_rocket_core::component_tree::ComponentTree;
 use federated_rocket_simulation::engine::SimulationResult;
 
-use crate::panels::{dashboard_panel, design_panel, menu_panel, motor_panel, optimization_panel, plot_panel, results_panel, simulation_panel};
+use crate::panels::{
+    dashboard_panel, design_panel, menu_panel, motor_panel, optimization_panel, plot_panel,
+    results_panel, simulation_panel,
+};
 
 /// Main application state
 pub struct FederatedRocketApp {
@@ -36,7 +39,7 @@ pub struct FederatedRocketApp {
     pub dialog_path: String,
 
     // New: Plot state
-    pub plot_type: usize,  // 0=altitude, 1=velocity, 2=mach, 3=flight_path
+    pub plot_type: usize, // 0=altitude, 1=velocity, 2=mach, 3=flight_path
 
     // New: Optimization state
     pub optimization_param_idx: usize,
@@ -183,13 +186,13 @@ impl eframe::App for FederatedRocketApp {
                             if !path.is_empty() {
                                 let p = std::path::Path::new(&path);
                                 if p.exists() {
-                                    match federated_rocket_fileio::format_detect::load_rocket_file(p)
-                                    {
+                                    match federated_rocket_fileio::format_detect::load_rocket_file(
+                                        p,
+                                    ) {
                                         Ok(tree) => {
                                             self.component_tree = Some(tree);
                                             self.current_file = Some(path.clone());
-                                            self.status_message =
-                                                format!("Loaded: {}", path);
+                                            self.status_message = format!("Loaded: {}", path);
                                             self.has_unsaved_changes = false;
                                             self.error_message = None;
                                         }
@@ -199,8 +202,7 @@ impl eframe::App for FederatedRocketApp {
                                         }
                                     }
                                 } else {
-                                    self.error_message =
-                                        Some(format!("File not found: {}", path));
+                                    self.error_message = Some(format!("File not found: {}", path));
                                 }
                             }
                             self.show_file_open_dialog = false;
@@ -233,8 +235,7 @@ impl eframe::App for FederatedRocketApp {
                                     ) {
                                         Ok(()) => {
                                             self.current_file = Some(path.clone());
-                                            self.status_message =
-                                                format!("Saved: {}", path);
+                                            self.status_message = format!("Saved: {}", path);
                                             self.has_unsaved_changes = false;
                                             self.error_message = None;
                                         }

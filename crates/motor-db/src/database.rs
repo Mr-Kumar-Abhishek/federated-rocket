@@ -130,9 +130,8 @@ impl MotorDatabase {
         let motor_id = tx.last_insert_rowid();
 
         // Insert thrust curve points
-        let mut stmt = tx.prepare(
-            "INSERT INTO thrust_points (motor_id, time, thrust) VALUES (?1, ?2, ?3)",
-        )?;
+        let mut stmt =
+            tx.prepare("INSERT INTO thrust_points (motor_id, time, thrust) VALUES (?1, ?2, ?3)")?;
         for pt in &motor.thrust_curve {
             stmt.execute(params![motor_id, pt.time, pt.thrust])?;
         }
@@ -155,36 +154,40 @@ impl MotorDatabase {
             )
             .map_err(DatabaseError::Sqlite)?;
 
-        let motor_result = stmt
-            .query_row(params![id], |row| {
-                let motor_type_str: String = row.get(4)?;
-                Ok(Motor {
-                    id: Some(row.get(0)?),
-                    manufacturer: row.get(1)?,
-                    manufacturer_abbrev: row.get(2)?,
-                    designation: row.get(3)?,
-                    motor_type: MotorType::from_str(&motor_type_str)
-                        .ok_or_else(|| rusqlite::Error::InvalidParameterName(
-                            format!("Invalid motor_type: {}", motor_type_str)
-                        ))?,
-                    diameter: row.get(5)?,
-                    length: row.get(6)?,
-                    total_impulse: row.get(7)?,
-                    burn_time: row.get(8)?,
-                    avg_thrust: row.get(9)?,
-                    max_thrust: row.get(10)?,
-                    propellant_mass: row.get(11)?,
-                    dry_mass: row.get(12)?,
-                    delay_time: row.get(13)?,
-                    thrust_curve: vec![], // will be filled below
-                    data_source: row.get(14)?,
-                })
-            });
+        let motor_result = stmt.query_row(params![id], |row| {
+            let motor_type_str: String = row.get(4)?;
+            Ok(Motor {
+                id: Some(row.get(0)?),
+                manufacturer: row.get(1)?,
+                manufacturer_abbrev: row.get(2)?,
+                designation: row.get(3)?,
+                motor_type: MotorType::from_str(&motor_type_str).ok_or_else(|| {
+                    rusqlite::Error::InvalidParameterName(format!(
+                        "Invalid motor_type: {}",
+                        motor_type_str
+                    ))
+                })?,
+                diameter: row.get(5)?,
+                length: row.get(6)?,
+                total_impulse: row.get(7)?,
+                burn_time: row.get(8)?,
+                avg_thrust: row.get(9)?,
+                max_thrust: row.get(10)?,
+                propellant_mass: row.get(11)?,
+                dry_mass: row.get(12)?,
+                delay_time: row.get(13)?,
+                thrust_curve: vec![], // will be filled below
+                data_source: row.get(14)?,
+            })
+        });
 
         let mut motor = match motor_result {
             Ok(m) => m,
             Err(rusqlite::Error::QueryReturnedNoRows) => {
-                return Err(DatabaseError::NotFound(format!("Motor ID {} not found", id)));
+                return Err(DatabaseError::NotFound(format!(
+                    "Motor ID {} not found",
+                    id
+                )));
             }
             Err(e) => return Err(DatabaseError::Sqlite(e)),
         };
@@ -203,20 +206,16 @@ impl MotorDatabase {
     ) -> Result<Motor, DatabaseError> {
         let mut stmt = self
             .conn
-            .prepare(
-                "SELECT id FROM motors WHERE manufacturer = ?1 AND designation = ?2",
-            )
+            .prepare("SELECT id FROM motors WHERE manufacturer = ?1 AND designation = ?2")
             .map_err(DatabaseError::Sqlite)?;
 
         let id: i64 = stmt
             .query_row(params![manufacturer, designation], |row| row.get(0))
             .map_err(|e| match e {
-                rusqlite::Error::QueryReturnedNoRows => {
-                    DatabaseError::NotFound(format!(
-                        "Motor '{} {}' not found",
-                        manufacturer, designation
-                    ))
-                }
+                rusqlite::Error::QueryReturnedNoRows => DatabaseError::NotFound(format!(
+                    "Motor '{} {}' not found",
+                    manufacturer, designation
+                )),
                 other => DatabaseError::Sqlite(other),
             })?;
 
@@ -227,39 +226,25 @@ impl MotorDatabase {
     ///
     /// Builds a dynamic SQL query based on which filters are active.
     pub fn search_motors(&self, query: &SearchQuery) -> Result<Vec<Motor>, DatabaseError> {
-        let mut sql = String::from(
-            "SELECT id FROM motors WHERE 1=1",
-        );
+        let mut sql = String::from("SELECT id FROM motors WHERE 1=1");
         let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
 
         if let Some(ref mfr) = query.manufacturer {
             param_values.push(Box::new(mfr.clone()));
-            sql.push_str(&format!(
-                " AND manufacturer LIKE ?{}",
-                param_values.len()
-            ));
+            sql.push_str(&format!(" AND manufacturer LIKE ?{}", param_values.len()));
         }
 
         if let Some(ref desig) = query.designation {
             param_values.push(Box::new(desig.clone()));
-            sql.push_str(&format!(
-                " AND designation LIKE ?{}",
-                param_values.len()
-            ));
+            sql.push_str(&format!(" AND designation LIKE ?{}", param_values.len()));
         }
 
         if let Some(ref ic) = query.impulse_class {
             let (min_impulse, max_impulse) = ic.impulse_range();
             param_values.push(Box::new(min_impulse));
-            sql.push_str(&format!(
-                " AND total_impulse >= ?{}",
-                param_values.len()
-            ));
+            sql.push_str(&format!(" AND total_impulse >= ?{}", param_values.len()));
             param_values.push(Box::new(max_impulse));
-            sql.push_str(&format!(
-                " AND total_impulse <= ?{}",
-                param_values.len()
-            ));
+            sql.push_str(&format!(" AND total_impulse <= ?{}", param_values.len()));
         }
 
         if let Some(d) = query.diameter_min {
@@ -289,10 +274,7 @@ impl MotorDatabase {
 
         if let Some(ref ds) = query.data_source {
             param_values.push(Box::new(ds.clone()));
-            sql.push_str(&format!(
-                " AND data_source = ?{}",
-                param_values.len()
-            ));
+            sql.push_str(&format!(" AND data_source = ?{}", param_values.len()));
         }
 
         if let Some(limit) = query.limit {
@@ -387,9 +369,7 @@ impl MotorDatabase {
     pub fn get_thrust_curve(&self, motor_id: i64) -> Result<Vec<ThrustPoint>, DatabaseError> {
         let mut stmt = self
             .conn
-            .prepare(
-                "SELECT time, thrust FROM thrust_points WHERE motor_id = ?1 ORDER BY time",
-            )
+            .prepare("SELECT time, thrust FROM thrust_points WHERE motor_id = ?1 ORDER BY time")
             .map_err(DatabaseError::Sqlite)?;
 
         let points = stmt
@@ -424,9 +404,8 @@ impl MotorDatabase {
         let mut count = 0;
 
         for result in reader.records() {
-            let record = result.map_err(|e| {
-                DatabaseError::InvalidData(format!("CSV parse error: {}", e))
-            })?;
+            let record = result
+                .map_err(|e| DatabaseError::InvalidData(format!("CSV parse error: {}", e)))?;
 
             if record.len() < 14 {
                 return Err(DatabaseError::InvalidData(format!(
@@ -438,64 +417,43 @@ impl MotorDatabase {
             let motor_type_str = record.get(3).unwrap_or("Solid");
             let motor_type = MotorType::from_str(motor_type_str).unwrap_or(MotorType::Solid);
 
-            let motor = Motor {
-                id: None,
-                manufacturer: record.get(0).unwrap_or_default().to_string(),
-                manufacturer_abbrev: record.get(1).unwrap_or_default().to_string(),
-                designation: record.get(2).unwrap_or_default().to_string(),
-                motor_type,
-                diameter: record
-                    .get(4)
-                    .unwrap_or("0")
-                    .parse()
-                    .map_err(|e| DatabaseError::InvalidData(format!("Invalid diameter: {}", e)))?,
-                length: record
-                    .get(5)
-                    .unwrap_or("0")
-                    .parse()
-                    .map_err(|e| DatabaseError::InvalidData(format!("Invalid length: {}", e)))?,
-                total_impulse: record
-                    .get(6)
-                    .unwrap_or("0")
-                    .parse()
-                    .map_err(|e| {
+            let motor =
+                Motor {
+                    id: None,
+                    manufacturer: record.get(0).unwrap_or_default().to_string(),
+                    manufacturer_abbrev: record.get(1).unwrap_or_default().to_string(),
+                    designation: record.get(2).unwrap_or_default().to_string(),
+                    motor_type,
+                    diameter: record.get(4).unwrap_or("0").parse().map_err(|e| {
+                        DatabaseError::InvalidData(format!("Invalid diameter: {}", e))
+                    })?,
+                    length: record.get(5).unwrap_or("0").parse().map_err(|e| {
+                        DatabaseError::InvalidData(format!("Invalid length: {}", e))
+                    })?,
+                    total_impulse: record.get(6).unwrap_or("0").parse().map_err(|e| {
                         DatabaseError::InvalidData(format!("Invalid total_impulse: {}", e))
                     })?,
-                burn_time: record
-                    .get(7)
-                    .unwrap_or("0")
-                    .parse()
-                    .map_err(|e| DatabaseError::InvalidData(format!("Invalid burn_time: {}", e)))?,
-                avg_thrust: record
-                    .get(8)
-                    .unwrap_or("0")
-                    .parse()
-                    .map_err(|e| DatabaseError::InvalidData(format!("Invalid avg_thrust: {}", e)))?,
-                max_thrust: record
-                    .get(9)
-                    .unwrap_or("0")
-                    .parse()
-                    .map_err(|e| DatabaseError::InvalidData(format!("Invalid max_thrust: {}", e)))?,
-                propellant_mass: record
-                    .get(10)
-                    .unwrap_or("0")
-                    .parse()
-                    .map_err(|e| {
+                    burn_time: record.get(7).unwrap_or("0").parse().map_err(|e| {
+                        DatabaseError::InvalidData(format!("Invalid burn_time: {}", e))
+                    })?,
+                    avg_thrust: record.get(8).unwrap_or("0").parse().map_err(|e| {
+                        DatabaseError::InvalidData(format!("Invalid avg_thrust: {}", e))
+                    })?,
+                    max_thrust: record.get(9).unwrap_or("0").parse().map_err(|e| {
+                        DatabaseError::InvalidData(format!("Invalid max_thrust: {}", e))
+                    })?,
+                    propellant_mass: record.get(10).unwrap_or("0").parse().map_err(|e| {
                         DatabaseError::InvalidData(format!("Invalid propellant_mass: {}", e))
                     })?,
-                dry_mass: record
-                    .get(11)
-                    .unwrap_or("0")
-                    .parse()
-                    .map_err(|e| DatabaseError::InvalidData(format!("Invalid dry_mass: {}", e)))?,
-                delay_time: record
-                    .get(12)
-                    .unwrap_or("0")
-                    .parse()
-                    .map_err(|e| DatabaseError::InvalidData(format!("Invalid delay_time: {}", e)))?,
-                thrust_curve: vec![],
-                data_source: record.get(13).unwrap_or("user").to_string(),
-            };
+                    dry_mass: record.get(11).unwrap_or("0").parse().map_err(|e| {
+                        DatabaseError::InvalidData(format!("Invalid dry_mass: {}", e))
+                    })?,
+                    delay_time: record.get(12).unwrap_or("0").parse().map_err(|e| {
+                        DatabaseError::InvalidData(format!("Invalid delay_time: {}", e))
+                    })?,
+                    thrust_curve: vec![],
+                    data_source: record.get(13).unwrap_or("user").to_string(),
+                };
 
             self.add_motor(&motor)?;
             count += 1;
@@ -527,11 +485,26 @@ mod tests {
             dry_mass: 11.0,
             delay_time: 5.0,
             thrust_curve: vec![
-                ThrustPoint { time: 0.0, thrust: 0.0 },
-                ThrustPoint { time: 0.1, thrust: 12.0 },
-                ThrustPoint { time: 0.5, thrust: 8.0 },
-                ThrustPoint { time: 1.0, thrust: 5.0 },
-                ThrustPoint { time: 1.6, thrust: 0.0 },
+                ThrustPoint {
+                    time: 0.0,
+                    thrust: 0.0,
+                },
+                ThrustPoint {
+                    time: 0.1,
+                    thrust: 12.0,
+                },
+                ThrustPoint {
+                    time: 0.5,
+                    thrust: 8.0,
+                },
+                ThrustPoint {
+                    time: 1.0,
+                    thrust: 5.0,
+                },
+                ThrustPoint {
+                    time: 1.6,
+                    thrust: 0.0,
+                },
             ],
             data_source: "test".to_string(),
         }
@@ -554,11 +527,26 @@ mod tests {
             dry_mass: 45.0,
             delay_time: 10.0,
             thrust_curve: vec![
-                ThrustPoint { time: 0.0, thrust: 0.0 },
-                ThrustPoint { time: 0.2, thrust: 35.0 },
-                ThrustPoint { time: 1.0, thrust: 28.0 },
-                ThrustPoint { time: 3.0, thrust: 22.0 },
-                ThrustPoint { time: 4.8, thrust: 0.0 },
+                ThrustPoint {
+                    time: 0.0,
+                    thrust: 0.0,
+                },
+                ThrustPoint {
+                    time: 0.2,
+                    thrust: 35.0,
+                },
+                ThrustPoint {
+                    time: 1.0,
+                    thrust: 28.0,
+                },
+                ThrustPoint {
+                    time: 3.0,
+                    thrust: 22.0,
+                },
+                ThrustPoint {
+                    time: 4.8,
+                    thrust: 0.0,
+                },
             ],
             data_source: "test".to_string(),
         }
@@ -591,9 +579,7 @@ mod tests {
         let motor = create_test_motor();
         let id = db.add_motor(&motor).unwrap();
 
-        let retrieved = db
-            .get_motor_by_designation("Estes", "C6-5")
-            .unwrap();
+        let retrieved = db.get_motor_by_designation("Estes", "C6-5").unwrap();
         assert_eq!(retrieved.id, Some(id));
         assert_eq!(retrieved.manufacturer, "Estes");
     }
@@ -669,10 +655,7 @@ mod tests {
 
         db.delete_motor(id).unwrap();
         assert_eq!(db.motor_count().unwrap(), 0);
-        assert!(matches!(
-            db.get_motor(id),
-            Err(DatabaseError::NotFound(_))
-        ));
+        assert!(matches!(db.get_motor(id), Err(DatabaseError::NotFound(_))));
     }
 
     #[test]

@@ -32,7 +32,7 @@ fn main() {
         let config = SimulationConfig {
             time_step: 0.001,
             reference_area: std::f64::consts::PI * 0.01, // placeholder
-            reference_diameter: 0.02,                     // placeholder
+            reference_diameter: 0.02,                    // placeholder
             max_time: 120.0,
             min_time_step: Some(1e-6),
             max_time_step: Some(0.01),

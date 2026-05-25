@@ -301,7 +301,11 @@ mod tests {
 
     #[test]
     fn test_new_bulk() {
-        let mat = Material::new("Test", MaterialType::Bulk, Quantity::new(500.0, Unit::Kilogram));
+        let mat = Material::new(
+            "Test",
+            MaterialType::Bulk,
+            Quantity::new(500.0, Unit::Kilogram),
+        );
         assert_eq!(mat.name, "Test");
         assert!(!mat.is_surface());
         assert!(mat.thickness.is_none());
@@ -362,11 +366,7 @@ mod tests {
             Material::CHROME_PAINT,
         ];
         for name in &known {
-            assert!(
-                get_material(name).is_some(),
-                "Missing material: {}",
-                name
-            );
+            assert!(get_material(name).is_some(), "Missing material: {}", name);
         }
     }
 

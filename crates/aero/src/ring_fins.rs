@@ -5,25 +5,28 @@ impl RingFinAero {
     /// Calculate normal force coefficient derivative for a ring fin
     /// CNα = 2 * (L/D) where L = length, D = diameter of ring
     pub fn cn_alpha(ring_length: f64, ring_diameter: f64) -> f64 {
-        if ring_diameter <= 0.0 { return 0.0; }
+        if ring_diameter <= 0.0 {
+            return 0.0;
+        }
         let aspect_ratio = ring_length / ring_diameter;
         // Empirical formula for ring fins
         2.0 * aspect_ratio / (1.0 + (1.0 + 4.0 * aspect_ratio.powi(2)).sqrt())
     }
-    
+
     /// Center of pressure position for ring fin (calibers from LE)
     pub fn cp_position(ring_length: f64, ring_diameter: f64) -> f64 {
         let aspect_ratio = ring_length / ring_diameter;
         0.5 - 0.125 * aspect_ratio // CP shifts forward with increasing AR
     }
-    
+
     /// Drag coefficient for ring fin at zero angle of attack
     pub fn cd_zero(ring_length: f64, ring_diameter: f64, skin_friction: f64) -> f64 {
         // Skin friction on inside and outside surfaces
-        let area_ratio = 2.0 * ring_length * ring_diameter / (ring_diameter.powi(2) * std::f64::consts::FRAC_PI_4);
+        let area_ratio = 2.0 * ring_length * ring_diameter
+            / (ring_diameter.powi(2) * std::f64::consts::FRAC_PI_4);
         2.0 * skin_friction * area_ratio
     }
-    
+
     /// Ring fin drag due to angle of attack
     pub fn cd_alpha(mach: f64, angle_of_attack: f64) -> f64 {
         let aoa_deg = angle_of_attack.to_degrees();
@@ -35,13 +38,13 @@ impl RingFinAero {
             2.0 * aoa_deg * mach.max(0.5)
         }
     }
-    
+
     /// Mach correction for ring fin normal force
     pub fn mach_correction(mach: f64) -> f64 {
         if mach < 0.8 {
-            1.0 / (1.0 - mach.powi(2)).sqrt()  // Prandtl-Glauert
+            1.0 / (1.0 - mach.powi(2)).sqrt() // Prandtl-Glauert
         } else if mach > 1.2 {
-            2.0 / (mach.powi(2) - 1.0).sqrt()   // Supersonic
+            2.0 / (mach.powi(2) - 1.0).sqrt() // Supersonic
         } else {
             // Transonic blend
             let t = (mach - 0.8) / 0.4;
@@ -70,7 +73,12 @@ mod tests {
         // CNα = 2 * 1.0 / (1.0 + sqrt(1 + 4*1)) = 2.0 / (1.0 + sqrt(5)) ≈ 0.618
         let cn = RingFinAero::cn_alpha(0.1, 0.1);
         let expected = 2.0_f64 * 1.0_f64 / (1.0_f64 + (1.0_f64 + 4.0_f64).sqrt());
-        assert!((cn - expected).abs() < 1e-12, "CNα for AR=1: {} vs {}", cn, expected);
+        assert!(
+            (cn - expected).abs() < 1e-12,
+            "CNα for AR=1: {} vs {}",
+            cn,
+            expected
+        );
     }
 
     #[test]
@@ -152,7 +160,7 @@ mod tests {
     fn test_ring_fin_cd_alpha_high_aoa_linear() {
         let cd_low = RingFinAero::cd_alpha(1.0, 0.1); // ~5.73°
         let cd_high = RingFinAero::cd_alpha(1.0, 0.2); // ~11.46°
-        // High AoA should be roughly linear
+                                                       // High AoA should be roughly linear
         assert!(cd_high > cd_low);
     }
 

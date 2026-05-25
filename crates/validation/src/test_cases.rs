@@ -1,9 +1,9 @@
 use crate::reference::*;
 use federated_rocket_core::component::*;
 use federated_rocket_core::component_tree::*;
+use federated_rocket_core::coordinate::Coordinate;
 use federated_rocket_core::material::{get_material, Material, MaterialType};
 use federated_rocket_core::units::{Quantity, Unit};
-use federated_rocket_core::coordinate::Coordinate;
 
 /// Standard test case for validation
 pub struct ValidationTestCase {
@@ -144,7 +144,11 @@ pub fn build_hpr_rocket() -> ComponentTree {
         sweep_length: Quantity::new(5.0, Unit::Centimeter),
         thickness: Quantity::new(3.0, Unit::Millimeter),
         cross_section: AirfoilType::Airfoil,
-        material: Material::new("G10", MaterialType::Bulk, Quantity::new(1800.0, Unit::Kilogram)),
+        material: Material::new(
+            "G10",
+            MaterialType::Bulk,
+            Quantity::new(1800.0, Unit::Kilogram),
+        ),
         color: Some("black".to_string()),
         cant_angle: Quantity::new(0.0, Unit::Degree),
         fin_placement: FinPlacement::Normal,

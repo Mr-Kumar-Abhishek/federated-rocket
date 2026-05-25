@@ -286,7 +286,11 @@ mod tests {
     use crate::units::{Quantity, Unit};
 
     fn test_material() -> Material {
-        Material::new("Test", MaterialType::Bulk, Quantity::new(1000.0, Unit::Kilogram))
+        Material::new(
+            "Test",
+            MaterialType::Bulk,
+            Quantity::new(1000.0, Unit::Kilogram),
+        )
     }
 
     fn make_body_tube(name: &str, x: f64) -> RocketComponent {
@@ -410,19 +414,10 @@ mod tests {
         assert!(children.contains(&chute_key));
 
         // Verify component names
-        assert_eq!(
-            tree.get(body_key).unwrap().component.name(),
-            "Main Tube"
-        );
-        assert_eq!(
-            tree.get(nose_key).unwrap().component.name(),
-            "Nose Cone"
-        );
+        assert_eq!(tree.get(body_key).unwrap().component.name(), "Main Tube");
+        assert_eq!(tree.get(nose_key).unwrap().component.name(), "Nose Cone");
         assert_eq!(tree.get(fin_key).unwrap().component.name(), "Fins");
-        assert_eq!(
-            tree.get(chute_key).unwrap().component.name(),
-            "Main Chute"
-        );
+        assert_eq!(tree.get(chute_key).unwrap().component.name(), "Main Chute");
     }
 
     #[test]
@@ -688,10 +683,7 @@ mod tests {
 
         // Verify structure is preserved
         let root = deserialized.root().unwrap();
-        assert_eq!(
-            deserialized.get(root).unwrap().component.name(),
-            "Body"
-        );
+        assert_eq!(deserialized.get(root).unwrap().component.name(), "Body");
     }
 
     #[test]

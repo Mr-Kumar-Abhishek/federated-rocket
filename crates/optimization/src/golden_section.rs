@@ -187,7 +187,11 @@ mod tests {
         let result = gs.minimize(|x| x * x, -2.0, 3.0);
 
         assert!(result.converged, "Golden section should converge for x^2");
-        assert!(result.final_value.abs() < 1e-4, "f(x_opt) ≈ 0, got {}", result.final_value);
+        assert!(
+            result.final_value.abs() < 1e-4,
+            "f(x_opt) ≈ 0, got {}",
+            result.final_value
+        );
         assert!(
             result.parameters[0].value.abs() < 1e-4,
             "x_opt ≈ 0, got {}",
@@ -205,11 +209,7 @@ mod tests {
 
         assert!(result.converged);
         let x_opt = result.parameters[0].value;
-        assert!(
-            (x_opt - 5.0).abs() < 1e-3,
-            "x_opt ≈ 5, got {}",
-            x_opt
-        );
+        assert!((x_opt - 5.0).abs() < 1e-3, "x_opt ≈ 5, got {}", x_opt);
     }
 
     #[test]
@@ -336,20 +336,22 @@ mod tests {
 
         assert!(result.converged);
         let x_opt = result.parameters[0].value;
-        assert!(
-            (x_opt - 0.0).abs() < 1e-3,
-            "x_opt ≈ 0, got {}",
-            x_opt
-        );
+        assert!((x_opt - 0.0).abs() < 1e-3, "x_opt ≈ 0, got {}", x_opt);
     }
 
     #[test]
     fn test_goal_custom_label() {
         let gs = GoldenSectionSearch::new();
         let result = gs.minimize(|x| x * x, -1.0, 1.0);
-        assert_eq!(result.goal, OptimizationGoal::Custom("minimize".to_string()));
+        assert_eq!(
+            result.goal,
+            OptimizationGoal::Custom("minimize".to_string())
+        );
 
         let max_result = gs.maximize(|x| -x * x, -1.0, 1.0);
-        assert_eq!(max_result.goal, OptimizationGoal::Custom("maximize".to_string()));
+        assert_eq!(
+            max_result.goal,
+            OptimizationGoal::Custom("maximize".to_string())
+        );
     }
 }

@@ -54,7 +54,10 @@ impl CsvExport {
     /// Columns: time (s), altitude (m), velocity (m/s), acceleration (m/s²),
     /// mach, angle_of_attack (deg), dynamic_pressure (Pa), position_x (m),
     /// position_y (m), position_z (m).
-    pub fn export_trajectory(path: &Path, trajectory: &[ExportPoint]) -> Result<(), std::io::Error> {
+    pub fn export_trajectory(
+        path: &Path,
+        trajectory: &[ExportPoint],
+    ) -> Result<(), std::io::Error> {
         let file = std::fs::File::create(path)?;
         let mut writer = csv::Writer::from_writer(file);
 
@@ -119,28 +122,21 @@ impl CsvExport {
     /// Export a motor thrust curve to a CSV file.
     ///
     /// Columns: time (s), thrust (N), mass (kg), pressure (Pa, optional).
-    pub fn export_motor_curve(path: &Path, curve: &[ThrustCurvePoint]) -> Result<(), std::io::Error> {
+    pub fn export_motor_curve(
+        path: &Path,
+        curve: &[ThrustCurvePoint],
+    ) -> Result<(), std::io::Error> {
         let file = std::fs::File::create(path)?;
         let mut writer = csv::Writer::from_writer(file);
 
-        writer.write_record(&[
-            "time_s",
-            "thrust_n",
-            "mass_kg",
-            "pressure_pa",
-        ])?;
+        writer.write_record(&["time_s", "thrust_n", "mass_kg", "pressure_pa"])?;
 
         for point in curve {
             let t = format_float(point.time);
             let th = format_float(point.thrust);
             let m = format_float(point.mass);
             let p = point.pressure.map(|v| format_float(v)).unwrap_or_default();
-            writer.write_record(&[
-                t.as_str(),
-                th.as_str(),
-                m.as_str(),
-                p.as_str(),
-            ])?;
+            writer.write_record(&[t.as_str(), th.as_str(), m.as_str(), p.as_str()])?;
         }
 
         writer.flush()?;
@@ -171,14 +167,28 @@ mod tests {
     fn test_export_trajectory() {
         let trajectory = vec![
             ExportPoint {
-                time: 0.0, altitude: 0.0, velocity: 0.0, acceleration: 0.0,
-                mach: 0.0, angle_of_attack: 0.0, dynamic_pressure: 0.0,
-                position_x: 0.0, position_y: 0.0, position_z: 0.0,
+                time: 0.0,
+                altitude: 0.0,
+                velocity: 0.0,
+                acceleration: 0.0,
+                mach: 0.0,
+                angle_of_attack: 0.0,
+                dynamic_pressure: 0.0,
+                position_x: 0.0,
+                position_y: 0.0,
+                position_z: 0.0,
             },
             ExportPoint {
-                time: 1.0, altitude: 10.0, velocity: 20.0, acceleration: 9.8,
-                mach: 0.05, angle_of_attack: 0.5, dynamic_pressure: 500.0,
-                position_x: 1.0, position_y: 0.0, position_z: 10.0,
+                time: 1.0,
+                altitude: 10.0,
+                velocity: 20.0,
+                acceleration: 9.8,
+                mach: 0.05,
+                angle_of_attack: 0.5,
+                dynamic_pressure: 500.0,
+                position_x: 1.0,
+                position_y: 0.0,
+                position_z: 10.0,
             },
         ];
 
@@ -186,7 +196,10 @@ mod tests {
         CsvExport::export_trajectory(&tmp, &trajectory).expect("export should succeed");
 
         let mut contents = String::new();
-        std::fs::File::open(&tmp).unwrap().read_to_string(&mut contents).unwrap();
+        std::fs::File::open(&tmp)
+            .unwrap()
+            .read_to_string(&mut contents)
+            .unwrap();
         assert!(contents.contains("time_s"));
         assert!(contents.contains("0.0"));
         assert!(contents.contains("20.0"));
@@ -197,12 +210,16 @@ mod tests {
     fn test_export_events() {
         let events = vec![
             ExportEvent {
-                time: 0.0, altitude: 0.0,
-                event_type: "LAUNCH".into(), description: "Liftoff".into(),
+                time: 0.0,
+                altitude: 0.0,
+                event_type: "LAUNCH".into(),
+                description: "Liftoff".into(),
             },
             ExportEvent {
-                time: 2.5, altitude: 150.0,
-                event_type: "BURNOUT".into(), description: "Motor burnout".into(),
+                time: 2.5,
+                altitude: 150.0,
+                event_type: "BURNOUT".into(),
+                description: "Motor burnout".into(),
             },
         ];
 
@@ -210,7 +227,10 @@ mod tests {
         CsvExport::export_events(&tmp, &events).expect("export should succeed");
 
         let mut contents = String::new();
-        std::fs::File::open(&tmp).unwrap().read_to_string(&mut contents).unwrap();
+        std::fs::File::open(&tmp)
+            .unwrap()
+            .read_to_string(&mut contents)
+            .unwrap();
         assert!(contents.contains("event_type"));
         assert!(contents.contains("LAUNCH"));
         assert!(contents.contains("BURNOUT"));
@@ -220,16 +240,34 @@ mod tests {
     #[test]
     fn test_export_motor_curve() {
         let curve = vec![
-            ThrustCurvePoint { time: 0.0, thrust: 0.0, mass: 0.1, pressure: None },
-            ThrustCurvePoint { time: 0.1, thrust: 50.0, mass: 0.09, pressure: Some(5000.0) },
-            ThrustCurvePoint { time: 0.5, thrust: 0.0, mass: 0.08, pressure: None },
+            ThrustCurvePoint {
+                time: 0.0,
+                thrust: 0.0,
+                mass: 0.1,
+                pressure: None,
+            },
+            ThrustCurvePoint {
+                time: 0.1,
+                thrust: 50.0,
+                mass: 0.09,
+                pressure: Some(5000.0),
+            },
+            ThrustCurvePoint {
+                time: 0.5,
+                thrust: 0.0,
+                mass: 0.08,
+                pressure: None,
+            },
         ];
 
         let tmp = std::env::temp_dir().join("motor.csv");
         CsvExport::export_motor_curve(&tmp, &curve).expect("export should succeed");
 
         let mut contents = String::new();
-        std::fs::File::open(&tmp).unwrap().read_to_string(&mut contents).unwrap();
+        std::fs::File::open(&tmp)
+            .unwrap()
+            .read_to_string(&mut contents)
+            .unwrap();
         assert!(contents.contains("thrust_n"));
         assert!(contents.contains("50"));
         let _ = std::fs::remove_file(&tmp);
@@ -240,7 +278,10 @@ mod tests {
         let tmp = std::env::temp_dir().join("empty_traj.csv");
         CsvExport::export_trajectory(&tmp, &[]).expect("empty export should succeed");
         let mut contents = String::new();
-        std::fs::File::open(&tmp).unwrap().read_to_string(&mut contents).unwrap();
+        std::fs::File::open(&tmp)
+            .unwrap()
+            .read_to_string(&mut contents)
+            .unwrap();
         // Only header row
         assert!(contents.starts_with("time_s"));
         assert_eq!(contents.lines().count(), 1);
@@ -249,13 +290,18 @@ mod tests {
 
     #[test]
     fn test_export_trajectory_invalid_values() {
-        let trajectory = vec![
-            ExportPoint {
-                time: f64::NAN, altitude: f64::INFINITY, velocity: 0.0, acceleration: 0.0,
-                mach: 0.0, angle_of_attack: 0.0, dynamic_pressure: 0.0,
-                position_x: 0.0, position_y: 0.0, position_z: 0.0,
-            },
-        ];
+        let trajectory = vec![ExportPoint {
+            time: f64::NAN,
+            altitude: f64::INFINITY,
+            velocity: 0.0,
+            acceleration: 0.0,
+            mach: 0.0,
+            angle_of_attack: 0.0,
+            dynamic_pressure: 0.0,
+            position_x: 0.0,
+            position_y: 0.0,
+            position_z: 0.0,
+        }];
         let tmp = std::env::temp_dir().join("nan.csv");
         let result = CsvExport::export_trajectory(&tmp, &trajectory);
         assert!(result.is_ok(), "NaN/Inf should not cause failure");

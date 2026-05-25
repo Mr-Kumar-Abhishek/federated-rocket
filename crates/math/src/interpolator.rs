@@ -207,6 +207,7 @@ impl Interpolator {
     // Natural cubic spline
     // ---------------------------------------------------------------
 
+    #[allow(clippy::needless_range_loop)]
     fn compute_natural_cubic_spline(&mut self, n: usize) {
         if n < 2 {
             return;
@@ -222,10 +223,9 @@ impl Interpolator {
 
         for i in 1..n - 1 {
             // RHS = 6 * (delta_{i+1} - delta_i) where delta_i = (y_i - y_{i-1}) / h_{i-1}
-            alpha[i] = 6.0 * (
-                (self.points[i + 1].1 - self.points[i].1) / h[i]
-                - (self.points[i].1 - self.points[i - 1].1) / h[i - 1]
-            );
+            alpha[i] = 6.0
+                * ((self.points[i + 1].1 - self.points[i].1) / h[i]
+                    - (self.points[i].1 - self.points[i - 1].1) / h[i - 1]);
         }
 
         // Tridiagonal system solve for second derivatives M_i (natural spline: M_0 = M_{n-1} = 0)
@@ -284,6 +284,7 @@ impl Interpolator {
     // Akima spline
     // ---------------------------------------------------------------
 
+    #[allow(clippy::needless_range_loop)]
     fn compute_akima_coefficients(&mut self, n: usize) {
         if n < 2 {
             return;
@@ -300,17 +301,17 @@ impl Interpolator {
         // Akima's method requires 4 extra slopes at each end
         let mut slopes = Vec::with_capacity(n + 8);
         // Estimate slopes before the first point
-        slopes.push(3.0 * m[0] - 2.0 * m[1]);   // m_{-4}
-        slopes.push(2.0 * m[0] - m[1]);          // m_{-3}
-        slopes.push(m[0]);                       // m_{-2}
-        slopes.push(m[0]);                       // m_{-1}
-        // Actual slopes
+        slopes.push(3.0 * m[0] - 2.0 * m[1]); // m_{-4}
+        slopes.push(2.0 * m[0] - m[1]); // m_{-3}
+        slopes.push(m[0]); // m_{-2}
+        slopes.push(m[0]); // m_{-1}
+                           // Actual slopes
         for i in 0..n - 1 {
             slopes.push(m[i]);
         }
         // Estimate slopes after the last point
-        slopes.push(m[n - 2]);                   // m_{n-1}
-        slopes.push(m[n - 2]);                   // m_{n}
+        slopes.push(m[n - 2]); // m_{n-1}
+        slopes.push(m[n - 2]); // m_{n}
         slopes.push(2.0 * m[n - 2] - m[n - 3]); // m_{n+1}
         slopes.push(3.0 * m[n - 2] - 2.0 * m[n - 3]); // m_{n+2}
 
@@ -375,6 +376,7 @@ impl Interpolator {
     // Polynomial interpolation
     // ---------------------------------------------------------------
 
+    #[allow(clippy::needless_range_loop)]
     fn compute_polynomial_coefficients(&mut self, n: usize) {
         if n < 2 {
             return;
@@ -538,7 +540,13 @@ mod tests {
     #[test]
     fn test_cubic_spline_derivative() {
         // f(x) = x^3 has derivative 3x^2
-        let points = vec![(0.0, 0.0), (0.5, 0.125), (1.0, 1.0), (1.5, 3.375), (2.0, 8.0)];
+        let points = vec![
+            (0.0, 0.0),
+            (0.5, 0.125),
+            (1.0, 1.0),
+            (1.5, 3.375),
+            (2.0, 8.0),
+        ];
         let mut interp = Interpolator::with_points(points, InterpolationMethod::CubicSpline);
 
         let deriv = interp.derivative(1.0).unwrap();
@@ -594,7 +602,10 @@ mod tests {
         let error = (actual - expected).abs();
         // With only 10 points on [0, pi/2], linear interpolation error at x=1
         // should be moderate
-        assert!(error < 0.05, "linear interpolation of sin(1): {actual}, expected {expected}");
+        assert!(
+            error < 0.05,
+            "linear interpolation of sin(1): {actual}, expected {expected}"
+        );
     }
 
     #[test]
@@ -608,13 +619,17 @@ mod tests {
             })
             .collect();
 
-        let mut interp = Interpolator::with_points(points.clone(), InterpolationMethod::CubicSpline);
+        let mut interp =
+            Interpolator::with_points(points.clone(), InterpolationMethod::CubicSpline);
 
         let x_test: f64 = 1.5;
         let expected = x_test.sin();
         let actual = interp.interpolate(x_test).unwrap();
         let error = (actual - expected).abs();
-        assert!(error < 0.01, "cubic spline of sin(1.5): {actual}, expected {expected}, error {error}");
+        assert!(
+            error < 0.01,
+            "cubic spline of sin(1.5): {actual}, expected {expected}, error {error}"
+        );
     }
 
     #[test]

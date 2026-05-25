@@ -107,7 +107,10 @@ pub fn run(args: SimulateArgs) -> anyhow::Result<()> {
                 Some(model)
             } else {
                 // Motor not found in database — create a simple model
-                eprintln!("Motor '{}' not found in database, using placeholder", motor_str);
+                eprintln!(
+                    "Motor '{}' not found in database, using placeholder",
+                    motor_str
+                );
                 Some(create_placeholder_motor(motor_str))
             }
         } else {
@@ -183,7 +186,10 @@ pub fn run(args: SimulateArgs) -> anyhow::Result<()> {
             println!("Output interval: {:.2}s", args.output_interval);
             println!("Max time: {:.1}s", args.max_time);
             if args.wind_speed > 0.0 {
-                println!("Wind: {:.1}m/s from {:.0}°", args.wind_speed, args.wind_direction);
+                println!(
+                    "Wind: {:.1}m/s from {:.0}°",
+                    args.wind_speed, args.wind_direction
+                );
             }
             println!();
         }
@@ -211,9 +217,9 @@ pub fn run(args: SimulateArgs) -> anyhow::Result<()> {
         println!("\n=== Flight Events ===");
         for event in &result.events {
             println!(
-            "{:.3}s: {} (alt: {:.1}m, vel: {:.1}m/s, mach: {:.2})",
-            event.time, event.description, event.altitude, event.velocity, event.mach
-        );
+                "{:.3}s: {} (alt: {:.1}m, vel: {:.1}m/s, mach: {:.2})",
+                event.time, event.description, event.altitude, event.velocity, event.mach
+            );
         }
     }
 

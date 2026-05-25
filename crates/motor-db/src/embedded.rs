@@ -51,14 +51,38 @@ fn motor_estes_a8_3() -> Motor {
         dry_mass: 4.0,
         delay_time: 3.0,
         thrust_curve: vec![
-            ThrustPoint { time: 0.00, thrust: 0.0 },
-            ThrustPoint { time: 0.04, thrust: 7.0 },
-            ThrustPoint { time: 0.10, thrust: 9.0 },
-            ThrustPoint { time: 0.20, thrust: 7.5 },
-            ThrustPoint { time: 0.35, thrust: 4.0 },
-            ThrustPoint { time: 0.50, thrust: 3.0 },
-            ThrustPoint { time: 0.65, thrust: 2.0 },
-            ThrustPoint { time: 0.75, thrust: 0.0 },
+            ThrustPoint {
+                time: 0.00,
+                thrust: 0.0,
+            },
+            ThrustPoint {
+                time: 0.04,
+                thrust: 7.0,
+            },
+            ThrustPoint {
+                time: 0.10,
+                thrust: 9.0,
+            },
+            ThrustPoint {
+                time: 0.20,
+                thrust: 7.5,
+            },
+            ThrustPoint {
+                time: 0.35,
+                thrust: 4.0,
+            },
+            ThrustPoint {
+                time: 0.50,
+                thrust: 3.0,
+            },
+            ThrustPoint {
+                time: 0.65,
+                thrust: 2.0,
+            },
+            ThrustPoint {
+                time: 0.75,
+                thrust: 0.0,
+            },
         ],
         data_source: "embedded".to_string(),
     }
@@ -81,14 +105,38 @@ fn motor_estes_b4_4() -> Motor {
         dry_mass: 7.0,
         delay_time: 4.0,
         thrust_curve: vec![
-            ThrustPoint { time: 0.00, thrust: 0.0 },
-            ThrustPoint { time: 0.04, thrust: 8.0 },
-            ThrustPoint { time: 0.10, thrust: 11.5 },
-            ThrustPoint { time: 0.25, thrust: 9.0 },
-            ThrustPoint { time: 0.45, thrust: 5.0 },
-            ThrustPoint { time: 0.70, thrust: 3.5 },
-            ThrustPoint { time: 0.95, thrust: 2.0 },
-            ThrustPoint { time: 1.10, thrust: 0.0 },
+            ThrustPoint {
+                time: 0.00,
+                thrust: 0.0,
+            },
+            ThrustPoint {
+                time: 0.04,
+                thrust: 8.0,
+            },
+            ThrustPoint {
+                time: 0.10,
+                thrust: 11.5,
+            },
+            ThrustPoint {
+                time: 0.25,
+                thrust: 9.0,
+            },
+            ThrustPoint {
+                time: 0.45,
+                thrust: 5.0,
+            },
+            ThrustPoint {
+                time: 0.70,
+                thrust: 3.5,
+            },
+            ThrustPoint {
+                time: 0.95,
+                thrust: 2.0,
+            },
+            ThrustPoint {
+                time: 1.10,
+                thrust: 0.0,
+            },
         ],
         data_source: "embedded".to_string(),
     }
@@ -111,14 +159,38 @@ fn motor_estes_b6_4() -> Motor {
         dry_mass: 6.0,
         delay_time: 4.0,
         thrust_curve: vec![
-            ThrustPoint { time: 0.00, thrust: 0.0 },
-            ThrustPoint { time: 0.03, thrust: 9.0 },
-            ThrustPoint { time: 0.08, thrust: 12.5 },
-            ThrustPoint { time: 0.15, thrust: 11.0 },
-            ThrustPoint { time: 0.30, thrust: 8.0 },
-            ThrustPoint { time: 0.50, thrust: 4.0 },
-            ThrustPoint { time: 0.65, thrust: 2.0 },
-            ThrustPoint { time: 0.75, thrust: 0.0 },
+            ThrustPoint {
+                time: 0.00,
+                thrust: 0.0,
+            },
+            ThrustPoint {
+                time: 0.03,
+                thrust: 9.0,
+            },
+            ThrustPoint {
+                time: 0.08,
+                thrust: 12.5,
+            },
+            ThrustPoint {
+                time: 0.15,
+                thrust: 11.0,
+            },
+            ThrustPoint {
+                time: 0.30,
+                thrust: 8.0,
+            },
+            ThrustPoint {
+                time: 0.50,
+                thrust: 4.0,
+            },
+            ThrustPoint {
+                time: 0.65,
+                thrust: 2.0,
+            },
+            ThrustPoint {
+                time: 0.75,
+                thrust: 0.0,
+            },
         ],
         data_source: "embedded".to_string(),
     }
@@ -141,14 +213,38 @@ fn motor_estes_b6_6() -> Motor {
         dry_mass: 6.0,
         delay_time: 6.0,
         thrust_curve: vec![
-            ThrustPoint { time: 0.00, thrust: 0.0 },
-            ThrustPoint { time: 0.03, thrust: 9.0 },
-            ThrustPoint { time: 0.08, thrust: 12.5 },
-            ThrustPoint { time: 0.15, thrust: 11.0 },
-            ThrustPoint { time: 0.30, thrust: 8.0 },
-            ThrustPoint { time: 0.50, thrust: 4.0 },
-            ThrustPoint { time: 0.65, thrust: 2.0 },
-            ThrustPoint { time: 0.75, thrust: 0.0 },
+            ThrustPoint {
+                time: 0.00,
+                thrust: 0.0,
+            },
+            ThrustPoint {
+                time: 0.03,
+                thrust: 9.0,
+            },
+            ThrustPoint {
+                time: 0.08,
+                thrust: 12.5,
+            },
+            ThrustPoint {
+                time: 0.15,
+                thrust: 11.0,
+            },
+            ThrustPoint {
+                time: 0.30,
+                thrust: 8.0,
+            },
+            ThrustPoint {
+                time: 0.50,
+                thrust: 4.0,
+            },
+            ThrustPoint {
+                time: 0.65,
+                thrust: 2.0,
+            },
+            ThrustPoint {
+                time: 0.75,
+                thrust: 0.0,
+            },
         ],
         data_source: "embedded".to_string(),
     }
@@ -171,19 +267,58 @@ fn motor_estes_c6_5() -> Motor {
         dry_mass: 11.0,
         delay_time: 5.0,
         thrust_curve: vec![
-            ThrustPoint { time: 0.00, thrust: 0.0 },
-            ThrustPoint { time: 0.05, thrust: 8.0 },
-            ThrustPoint { time: 0.10, thrust: 12.0 },
-            ThrustPoint { time: 0.20, thrust: 10.0 },
-            ThrustPoint { time: 0.40, thrust: 8.0 },
-            ThrustPoint { time: 0.60, thrust: 7.0 },
-            ThrustPoint { time: 0.80, thrust: 6.0 },
-            ThrustPoint { time: 1.00, thrust: 5.0 },
-            ThrustPoint { time: 1.20, thrust: 4.0 },
-            ThrustPoint { time: 1.40, thrust: 3.0 },
-            ThrustPoint { time: 1.50, thrust: 2.0 },
-            ThrustPoint { time: 1.55, thrust: 1.0 },
-            ThrustPoint { time: 1.60, thrust: 0.0 },
+            ThrustPoint {
+                time: 0.00,
+                thrust: 0.0,
+            },
+            ThrustPoint {
+                time: 0.05,
+                thrust: 8.0,
+            },
+            ThrustPoint {
+                time: 0.10,
+                thrust: 12.0,
+            },
+            ThrustPoint {
+                time: 0.20,
+                thrust: 10.0,
+            },
+            ThrustPoint {
+                time: 0.40,
+                thrust: 8.0,
+            },
+            ThrustPoint {
+                time: 0.60,
+                thrust: 7.0,
+            },
+            ThrustPoint {
+                time: 0.80,
+                thrust: 6.0,
+            },
+            ThrustPoint {
+                time: 1.00,
+                thrust: 5.0,
+            },
+            ThrustPoint {
+                time: 1.20,
+                thrust: 4.0,
+            },
+            ThrustPoint {
+                time: 1.40,
+                thrust: 3.0,
+            },
+            ThrustPoint {
+                time: 1.50,
+                thrust: 2.0,
+            },
+            ThrustPoint {
+                time: 1.55,
+                thrust: 1.0,
+            },
+            ThrustPoint {
+                time: 1.60,
+                thrust: 0.0,
+            },
         ],
         data_source: "embedded".to_string(),
     }
@@ -206,19 +341,58 @@ fn motor_estes_c6_7() -> Motor {
         dry_mass: 11.0,
         delay_time: 7.0,
         thrust_curve: vec![
-            ThrustPoint { time: 0.00, thrust: 0.0 },
-            ThrustPoint { time: 0.05, thrust: 8.0 },
-            ThrustPoint { time: 0.10, thrust: 12.0 },
-            ThrustPoint { time: 0.20, thrust: 10.0 },
-            ThrustPoint { time: 0.40, thrust: 8.0 },
-            ThrustPoint { time: 0.60, thrust: 7.0 },
-            ThrustPoint { time: 0.80, thrust: 6.0 },
-            ThrustPoint { time: 1.00, thrust: 5.0 },
-            ThrustPoint { time: 1.20, thrust: 4.0 },
-            ThrustPoint { time: 1.40, thrust: 3.0 },
-            ThrustPoint { time: 1.50, thrust: 2.0 },
-            ThrustPoint { time: 1.55, thrust: 1.0 },
-            ThrustPoint { time: 1.60, thrust: 0.0 },
+            ThrustPoint {
+                time: 0.00,
+                thrust: 0.0,
+            },
+            ThrustPoint {
+                time: 0.05,
+                thrust: 8.0,
+            },
+            ThrustPoint {
+                time: 0.10,
+                thrust: 12.0,
+            },
+            ThrustPoint {
+                time: 0.20,
+                thrust: 10.0,
+            },
+            ThrustPoint {
+                time: 0.40,
+                thrust: 8.0,
+            },
+            ThrustPoint {
+                time: 0.60,
+                thrust: 7.0,
+            },
+            ThrustPoint {
+                time: 0.80,
+                thrust: 6.0,
+            },
+            ThrustPoint {
+                time: 1.00,
+                thrust: 5.0,
+            },
+            ThrustPoint {
+                time: 1.20,
+                thrust: 4.0,
+            },
+            ThrustPoint {
+                time: 1.40,
+                thrust: 3.0,
+            },
+            ThrustPoint {
+                time: 1.50,
+                thrust: 2.0,
+            },
+            ThrustPoint {
+                time: 1.55,
+                thrust: 1.0,
+            },
+            ThrustPoint {
+                time: 1.60,
+                thrust: 0.0,
+            },
         ],
         data_source: "embedded".to_string(),
     }
@@ -241,16 +415,46 @@ fn motor_estes_c11_3() -> Motor {
         dry_mass: 12.5,
         delay_time: 3.0,
         thrust_curve: vec![
-            ThrustPoint { time: 0.00, thrust: 0.0 },
-            ThrustPoint { time: 0.04, thrust: 10.0 },
-            ThrustPoint { time: 0.10, thrust: 16.0 },
-            ThrustPoint { time: 0.20, thrust: 14.0 },
-            ThrustPoint { time: 0.40, thrust: 11.0 },
-            ThrustPoint { time: 0.60, thrust: 9.0 },
-            ThrustPoint { time: 0.80, thrust: 7.0 },
-            ThrustPoint { time: 1.00, thrust: 5.0 },
-            ThrustPoint { time: 1.15, thrust: 2.0 },
-            ThrustPoint { time: 1.20, thrust: 0.0 },
+            ThrustPoint {
+                time: 0.00,
+                thrust: 0.0,
+            },
+            ThrustPoint {
+                time: 0.04,
+                thrust: 10.0,
+            },
+            ThrustPoint {
+                time: 0.10,
+                thrust: 16.0,
+            },
+            ThrustPoint {
+                time: 0.20,
+                thrust: 14.0,
+            },
+            ThrustPoint {
+                time: 0.40,
+                thrust: 11.0,
+            },
+            ThrustPoint {
+                time: 0.60,
+                thrust: 9.0,
+            },
+            ThrustPoint {
+                time: 0.80,
+                thrust: 7.0,
+            },
+            ThrustPoint {
+                time: 1.00,
+                thrust: 5.0,
+            },
+            ThrustPoint {
+                time: 1.15,
+                thrust: 2.0,
+            },
+            ThrustPoint {
+                time: 1.20,
+                thrust: 0.0,
+            },
         ],
         data_source: "embedded".to_string(),
     }
@@ -273,18 +477,54 @@ fn motor_estes_d12_5() -> Motor {
         dry_mass: 18.0,
         delay_time: 5.0,
         thrust_curve: vec![
-            ThrustPoint { time: 0.00, thrust: 0.0 },
-            ThrustPoint { time: 0.04, thrust: 15.0 },
-            ThrustPoint { time: 0.10, thrust: 28.0 },
-            ThrustPoint { time: 0.20, thrust: 24.0 },
-            ThrustPoint { time: 0.40, thrust: 18.0 },
-            ThrustPoint { time: 0.60, thrust: 14.0 },
-            ThrustPoint { time: 0.80, thrust: 11.0 },
-            ThrustPoint { time: 1.00, thrust: 9.0 },
-            ThrustPoint { time: 1.20, thrust: 7.0 },
-            ThrustPoint { time: 1.40, thrust: 4.0 },
-            ThrustPoint { time: 1.55, thrust: 2.0 },
-            ThrustPoint { time: 1.60, thrust: 0.0 },
+            ThrustPoint {
+                time: 0.00,
+                thrust: 0.0,
+            },
+            ThrustPoint {
+                time: 0.04,
+                thrust: 15.0,
+            },
+            ThrustPoint {
+                time: 0.10,
+                thrust: 28.0,
+            },
+            ThrustPoint {
+                time: 0.20,
+                thrust: 24.0,
+            },
+            ThrustPoint {
+                time: 0.40,
+                thrust: 18.0,
+            },
+            ThrustPoint {
+                time: 0.60,
+                thrust: 14.0,
+            },
+            ThrustPoint {
+                time: 0.80,
+                thrust: 11.0,
+            },
+            ThrustPoint {
+                time: 1.00,
+                thrust: 9.0,
+            },
+            ThrustPoint {
+                time: 1.20,
+                thrust: 7.0,
+            },
+            ThrustPoint {
+                time: 1.40,
+                thrust: 4.0,
+            },
+            ThrustPoint {
+                time: 1.55,
+                thrust: 2.0,
+            },
+            ThrustPoint {
+                time: 1.60,
+                thrust: 0.0,
+            },
         ],
         data_source: "embedded".to_string(),
     }
@@ -307,18 +547,54 @@ fn motor_estes_d12_3() -> Motor {
         dry_mass: 18.0,
         delay_time: 3.0,
         thrust_curve: vec![
-            ThrustPoint { time: 0.00, thrust: 0.0 },
-            ThrustPoint { time: 0.04, thrust: 15.0 },
-            ThrustPoint { time: 0.10, thrust: 28.0 },
-            ThrustPoint { time: 0.20, thrust: 24.0 },
-            ThrustPoint { time: 0.40, thrust: 18.0 },
-            ThrustPoint { time: 0.60, thrust: 14.0 },
-            ThrustPoint { time: 0.80, thrust: 11.0 },
-            ThrustPoint { time: 1.00, thrust: 9.0 },
-            ThrustPoint { time: 1.20, thrust: 7.0 },
-            ThrustPoint { time: 1.40, thrust: 4.0 },
-            ThrustPoint { time: 1.55, thrust: 2.0 },
-            ThrustPoint { time: 1.60, thrust: 0.0 },
+            ThrustPoint {
+                time: 0.00,
+                thrust: 0.0,
+            },
+            ThrustPoint {
+                time: 0.04,
+                thrust: 15.0,
+            },
+            ThrustPoint {
+                time: 0.10,
+                thrust: 28.0,
+            },
+            ThrustPoint {
+                time: 0.20,
+                thrust: 24.0,
+            },
+            ThrustPoint {
+                time: 0.40,
+                thrust: 18.0,
+            },
+            ThrustPoint {
+                time: 0.60,
+                thrust: 14.0,
+            },
+            ThrustPoint {
+                time: 0.80,
+                thrust: 11.0,
+            },
+            ThrustPoint {
+                time: 1.00,
+                thrust: 9.0,
+            },
+            ThrustPoint {
+                time: 1.20,
+                thrust: 7.0,
+            },
+            ThrustPoint {
+                time: 1.40,
+                thrust: 4.0,
+            },
+            ThrustPoint {
+                time: 1.55,
+                thrust: 2.0,
+            },
+            ThrustPoint {
+                time: 1.60,
+                thrust: 0.0,
+            },
         ],
         data_source: "embedded".to_string(),
     }
@@ -341,17 +617,50 @@ fn motor_estes_e12_4() -> Motor {
         dry_mass: 28.0,
         delay_time: 4.0,
         thrust_curve: vec![
-            ThrustPoint { time: 0.00, thrust: 0.0 },
-            ThrustPoint { time: 0.05, thrust: 18.0 },
-            ThrustPoint { time: 0.15, thrust: 25.0 },
-            ThrustPoint { time: 0.30, thrust: 22.0 },
-            ThrustPoint { time: 0.50, thrust: 18.0 },
-            ThrustPoint { time: 0.80, thrust: 15.0 },
-            ThrustPoint { time: 1.10, thrust: 12.0 },
-            ThrustPoint { time: 1.40, thrust: 9.0 },
-            ThrustPoint { time: 1.70, thrust: 6.0 },
-            ThrustPoint { time: 1.95, thrust: 3.0 },
-            ThrustPoint { time: 2.10, thrust: 0.0 },
+            ThrustPoint {
+                time: 0.00,
+                thrust: 0.0,
+            },
+            ThrustPoint {
+                time: 0.05,
+                thrust: 18.0,
+            },
+            ThrustPoint {
+                time: 0.15,
+                thrust: 25.0,
+            },
+            ThrustPoint {
+                time: 0.30,
+                thrust: 22.0,
+            },
+            ThrustPoint {
+                time: 0.50,
+                thrust: 18.0,
+            },
+            ThrustPoint {
+                time: 0.80,
+                thrust: 15.0,
+            },
+            ThrustPoint {
+                time: 1.10,
+                thrust: 12.0,
+            },
+            ThrustPoint {
+                time: 1.40,
+                thrust: 9.0,
+            },
+            ThrustPoint {
+                time: 1.70,
+                thrust: 6.0,
+            },
+            ThrustPoint {
+                time: 1.95,
+                thrust: 3.0,
+            },
+            ThrustPoint {
+                time: 2.10,
+                thrust: 0.0,
+            },
         ],
         data_source: "embedded".to_string(),
     }
@@ -374,18 +683,54 @@ fn motor_estes_f15_6() -> Motor {
         dry_mass: 45.0,
         delay_time: 6.0,
         thrust_curve: vec![
-            ThrustPoint { time: 0.00, thrust: 0.0 },
-            ThrustPoint { time: 0.04, thrust: 22.0 },
-            ThrustPoint { time: 0.10, thrust: 30.0 },
-            ThrustPoint { time: 0.30, thrust: 26.0 },
-            ThrustPoint { time: 0.60, thrust: 22.0 },
-            ThrustPoint { time: 1.00, thrust: 18.0 },
-            ThrustPoint { time: 1.50, thrust: 14.0 },
-            ThrustPoint { time: 2.00, thrust: 12.0 },
-            ThrustPoint { time: 2.50, thrust: 9.0 },
-            ThrustPoint { time: 3.00, thrust: 6.0 },
-            ThrustPoint { time: 3.30, thrust: 3.0 },
-            ThrustPoint { time: 3.50, thrust: 0.0 },
+            ThrustPoint {
+                time: 0.00,
+                thrust: 0.0,
+            },
+            ThrustPoint {
+                time: 0.04,
+                thrust: 22.0,
+            },
+            ThrustPoint {
+                time: 0.10,
+                thrust: 30.0,
+            },
+            ThrustPoint {
+                time: 0.30,
+                thrust: 26.0,
+            },
+            ThrustPoint {
+                time: 0.60,
+                thrust: 22.0,
+            },
+            ThrustPoint {
+                time: 1.00,
+                thrust: 18.0,
+            },
+            ThrustPoint {
+                time: 1.50,
+                thrust: 14.0,
+            },
+            ThrustPoint {
+                time: 2.00,
+                thrust: 12.0,
+            },
+            ThrustPoint {
+                time: 2.50,
+                thrust: 9.0,
+            },
+            ThrustPoint {
+                time: 3.00,
+                thrust: 6.0,
+            },
+            ThrustPoint {
+                time: 3.30,
+                thrust: 3.0,
+            },
+            ThrustPoint {
+                time: 3.50,
+                thrust: 0.0,
+            },
         ],
         data_source: "embedded".to_string(),
     }
@@ -410,17 +755,50 @@ fn motor_aerotech_e23_5() -> Motor {
         dry_mass: 28.0,
         delay_time: 5.0,
         thrust_curve: vec![
-            ThrustPoint { time: 0.00, thrust: 0.0 },
-            ThrustPoint { time: 0.02, thrust: 25.0 },
-            ThrustPoint { time: 0.05, thrust: 42.0 },
-            ThrustPoint { time: 0.10, thrust: 40.0 },
-            ThrustPoint { time: 0.25, thrust: 35.0 },
-            ThrustPoint { time: 0.50, thrust: 30.0 },
-            ThrustPoint { time: 0.80, thrust: 25.0 },
-            ThrustPoint { time: 1.10, thrust: 20.0 },
-            ThrustPoint { time: 1.35, thrust: 15.0 },
-            ThrustPoint { time: 1.55, thrust: 8.0 },
-            ThrustPoint { time: 1.60, thrust: 0.0 },
+            ThrustPoint {
+                time: 0.00,
+                thrust: 0.0,
+            },
+            ThrustPoint {
+                time: 0.02,
+                thrust: 25.0,
+            },
+            ThrustPoint {
+                time: 0.05,
+                thrust: 42.0,
+            },
+            ThrustPoint {
+                time: 0.10,
+                thrust: 40.0,
+            },
+            ThrustPoint {
+                time: 0.25,
+                thrust: 35.0,
+            },
+            ThrustPoint {
+                time: 0.50,
+                thrust: 30.0,
+            },
+            ThrustPoint {
+                time: 0.80,
+                thrust: 25.0,
+            },
+            ThrustPoint {
+                time: 1.10,
+                thrust: 20.0,
+            },
+            ThrustPoint {
+                time: 1.35,
+                thrust: 15.0,
+            },
+            ThrustPoint {
+                time: 1.55,
+                thrust: 8.0,
+            },
+            ThrustPoint {
+                time: 1.60,
+                thrust: 0.0,
+            },
         ],
         data_source: "embedded".to_string(),
     }
@@ -443,17 +821,50 @@ fn motor_aerotech_f24_7() -> Motor {
         dry_mass: 42.0,
         delay_time: 7.0,
         thrust_curve: vec![
-            ThrustPoint { time: 0.00, thrust: 0.0 },
-            ThrustPoint { time: 0.03, thrust: 30.0 },
-            ThrustPoint { time: 0.08, thrust: 45.0 },
-            ThrustPoint { time: 0.20, thrust: 40.0 },
-            ThrustPoint { time: 0.50, thrust: 35.0 },
-            ThrustPoint { time: 0.90, thrust: 28.0 },
-            ThrustPoint { time: 1.30, thrust: 22.0 },
-            ThrustPoint { time: 1.70, thrust: 18.0 },
-            ThrustPoint { time: 2.00, thrust: 12.0 },
-            ThrustPoint { time: 2.20, thrust: 5.0 },
-            ThrustPoint { time: 2.30, thrust: 0.0 },
+            ThrustPoint {
+                time: 0.00,
+                thrust: 0.0,
+            },
+            ThrustPoint {
+                time: 0.03,
+                thrust: 30.0,
+            },
+            ThrustPoint {
+                time: 0.08,
+                thrust: 45.0,
+            },
+            ThrustPoint {
+                time: 0.20,
+                thrust: 40.0,
+            },
+            ThrustPoint {
+                time: 0.50,
+                thrust: 35.0,
+            },
+            ThrustPoint {
+                time: 0.90,
+                thrust: 28.0,
+            },
+            ThrustPoint {
+                time: 1.30,
+                thrust: 22.0,
+            },
+            ThrustPoint {
+                time: 1.70,
+                thrust: 18.0,
+            },
+            ThrustPoint {
+                time: 2.00,
+                thrust: 12.0,
+            },
+            ThrustPoint {
+                time: 2.20,
+                thrust: 5.0,
+            },
+            ThrustPoint {
+                time: 2.30,
+                thrust: 0.0,
+            },
         ],
         data_source: "embedded".to_string(),
     }
@@ -476,16 +887,46 @@ fn motor_aerotech_f35_6() -> Motor {
         dry_mass: 50.0,
         delay_time: 6.0,
         thrust_curve: vec![
-            ThrustPoint { time: 0.00, thrust: 0.0 },
-            ThrustPoint { time: 0.02, thrust: 40.0 },
-            ThrustPoint { time: 0.06, thrust: 55.0 },
-            ThrustPoint { time: 0.15, thrust: 50.0 },
-            ThrustPoint { time: 0.40, thrust: 45.0 },
-            ThrustPoint { time: 0.80, thrust: 38.0 },
-            ThrustPoint { time: 1.20, thrust: 32.0 },
-            ThrustPoint { time: 1.60, thrust: 22.0 },
-            ThrustPoint { time: 1.85, thrust: 12.0 },
-            ThrustPoint { time: 2.00, thrust: 0.0 },
+            ThrustPoint {
+                time: 0.00,
+                thrust: 0.0,
+            },
+            ThrustPoint {
+                time: 0.02,
+                thrust: 40.0,
+            },
+            ThrustPoint {
+                time: 0.06,
+                thrust: 55.0,
+            },
+            ThrustPoint {
+                time: 0.15,
+                thrust: 50.0,
+            },
+            ThrustPoint {
+                time: 0.40,
+                thrust: 45.0,
+            },
+            ThrustPoint {
+                time: 0.80,
+                thrust: 38.0,
+            },
+            ThrustPoint {
+                time: 1.20,
+                thrust: 32.0,
+            },
+            ThrustPoint {
+                time: 1.60,
+                thrust: 22.0,
+            },
+            ThrustPoint {
+                time: 1.85,
+                thrust: 12.0,
+            },
+            ThrustPoint {
+                time: 2.00,
+                thrust: 0.0,
+            },
         ],
         data_source: "embedded".to_string(),
     }
@@ -508,19 +949,58 @@ fn motor_aerotech_g25_10() -> Motor {
         dry_mass: 85.0,
         delay_time: 10.0,
         thrust_curve: vec![
-            ThrustPoint { time: 0.00, thrust: 0.0 },
-            ThrustPoint { time: 0.05, thrust: 28.0 },
-            ThrustPoint { time: 0.15, thrust: 40.0 },
-            ThrustPoint { time: 0.40, thrust: 36.0 },
-            ThrustPoint { time: 0.80, thrust: 32.0 },
-            ThrustPoint { time: 1.50, thrust: 28.0 },
-            ThrustPoint { time: 2.20, thrust: 25.0 },
-            ThrustPoint { time: 3.00, thrust: 22.0 },
-            ThrustPoint { time: 3.50, thrust: 20.0 },
-            ThrustPoint { time: 4.00, thrust: 16.0 },
-            ThrustPoint { time: 4.40, thrust: 10.0 },
-            ThrustPoint { time: 4.70, thrust: 4.0 },
-            ThrustPoint { time: 4.80, thrust: 0.0 },
+            ThrustPoint {
+                time: 0.00,
+                thrust: 0.0,
+            },
+            ThrustPoint {
+                time: 0.05,
+                thrust: 28.0,
+            },
+            ThrustPoint {
+                time: 0.15,
+                thrust: 40.0,
+            },
+            ThrustPoint {
+                time: 0.40,
+                thrust: 36.0,
+            },
+            ThrustPoint {
+                time: 0.80,
+                thrust: 32.0,
+            },
+            ThrustPoint {
+                time: 1.50,
+                thrust: 28.0,
+            },
+            ThrustPoint {
+                time: 2.20,
+                thrust: 25.0,
+            },
+            ThrustPoint {
+                time: 3.00,
+                thrust: 22.0,
+            },
+            ThrustPoint {
+                time: 3.50,
+                thrust: 20.0,
+            },
+            ThrustPoint {
+                time: 4.00,
+                thrust: 16.0,
+            },
+            ThrustPoint {
+                time: 4.40,
+                thrust: 10.0,
+            },
+            ThrustPoint {
+                time: 4.70,
+                thrust: 4.0,
+            },
+            ThrustPoint {
+                time: 4.80,
+                thrust: 0.0,
+            },
         ],
         data_source: "embedded".to_string(),
     }
@@ -543,18 +1023,54 @@ fn motor_aerotech_h13_15() -> Motor {
         dry_mass: 140.0,
         delay_time: 15.0,
         thrust_curve: vec![
-            ThrustPoint { time: 0.00, thrust: 0.0 },
-            ThrustPoint { time: 0.10, thrust: 18.0 },
-            ThrustPoint { time: 0.30, thrust: 25.0 },
-            ThrustPoint { time: 0.80, thrust: 22.0 },
-            ThrustPoint { time: 2.00, thrust: 18.0 },
-            ThrustPoint { time: 4.00, thrust: 15.0 },
-            ThrustPoint { time: 6.00, thrust: 13.0 },
-            ThrustPoint { time: 8.00, thrust: 11.0 },
-            ThrustPoint { time: 10.00, thrust: 9.0 },
-            ThrustPoint { time: 12.00, thrust: 6.0 },
-            ThrustPoint { time: 13.50, thrust: 3.0 },
-            ThrustPoint { time: 13.80, thrust: 0.0 },
+            ThrustPoint {
+                time: 0.00,
+                thrust: 0.0,
+            },
+            ThrustPoint {
+                time: 0.10,
+                thrust: 18.0,
+            },
+            ThrustPoint {
+                time: 0.30,
+                thrust: 25.0,
+            },
+            ThrustPoint {
+                time: 0.80,
+                thrust: 22.0,
+            },
+            ThrustPoint {
+                time: 2.00,
+                thrust: 18.0,
+            },
+            ThrustPoint {
+                time: 4.00,
+                thrust: 15.0,
+            },
+            ThrustPoint {
+                time: 6.00,
+                thrust: 13.0,
+            },
+            ThrustPoint {
+                time: 8.00,
+                thrust: 11.0,
+            },
+            ThrustPoint {
+                time: 10.00,
+                thrust: 9.0,
+            },
+            ThrustPoint {
+                time: 12.00,
+                thrust: 6.0,
+            },
+            ThrustPoint {
+                time: 13.50,
+                thrust: 3.0,
+            },
+            ThrustPoint {
+                time: 13.80,
+                thrust: 0.0,
+            },
         ],
         data_source: "embedded".to_string(),
     }
@@ -577,19 +1093,58 @@ fn motor_aerotech_i161_14() -> Motor {
         dry_mass: 250.0,
         delay_time: 14.0,
         thrust_curve: vec![
-            ThrustPoint { time: 0.00, thrust: 0.0 },
-            ThrustPoint { time: 0.02, thrust: 150.0 },
-            ThrustPoint { time: 0.05, thrust: 280.0 },
-            ThrustPoint { time: 0.10, thrust: 260.0 },
-            ThrustPoint { time: 0.30, thrust: 230.0 },
-            ThrustPoint { time: 0.60, thrust: 200.0 },
-            ThrustPoint { time: 1.00, thrust: 180.0 },
-            ThrustPoint { time: 1.40, thrust: 160.0 },
-            ThrustPoint { time: 1.80, thrust: 140.0 },
-            ThrustPoint { time: 2.20, thrust: 110.0 },
-            ThrustPoint { time: 2.60, thrust: 70.0 },
-            ThrustPoint { time: 2.80, thrust: 30.0 },
-            ThrustPoint { time: 2.85, thrust: 0.0 },
+            ThrustPoint {
+                time: 0.00,
+                thrust: 0.0,
+            },
+            ThrustPoint {
+                time: 0.02,
+                thrust: 150.0,
+            },
+            ThrustPoint {
+                time: 0.05,
+                thrust: 280.0,
+            },
+            ThrustPoint {
+                time: 0.10,
+                thrust: 260.0,
+            },
+            ThrustPoint {
+                time: 0.30,
+                thrust: 230.0,
+            },
+            ThrustPoint {
+                time: 0.60,
+                thrust: 200.0,
+            },
+            ThrustPoint {
+                time: 1.00,
+                thrust: 180.0,
+            },
+            ThrustPoint {
+                time: 1.40,
+                thrust: 160.0,
+            },
+            ThrustPoint {
+                time: 1.80,
+                thrust: 140.0,
+            },
+            ThrustPoint {
+                time: 2.20,
+                thrust: 110.0,
+            },
+            ThrustPoint {
+                time: 2.60,
+                thrust: 70.0,
+            },
+            ThrustPoint {
+                time: 2.80,
+                thrust: 30.0,
+            },
+            ThrustPoint {
+                time: 2.85,
+                thrust: 0.0,
+            },
         ],
         data_source: "embedded".to_string(),
     }
@@ -612,19 +1167,58 @@ fn motor_aerotech_j250_15() -> Motor {
         dry_mass: 350.0,
         delay_time: 15.0,
         thrust_curve: vec![
-            ThrustPoint { time: 0.00, thrust: 0.0 },
-            ThrustPoint { time: 0.02, thrust: 250.0 },
-            ThrustPoint { time: 0.05, thrust: 420.0 },
-            ThrustPoint { time: 0.10, thrust: 400.0 },
-            ThrustPoint { time: 0.25, thrust: 360.0 },
-            ThrustPoint { time: 0.50, thrust: 320.0 },
-            ThrustPoint { time: 0.80, thrust: 290.0 },
-            ThrustPoint { time: 1.20, thrust: 260.0 },
-            ThrustPoint { time: 1.60, thrust: 230.0 },
-            ThrustPoint { time: 2.00, thrust: 190.0 },
-            ThrustPoint { time: 2.40, thrust: 140.0 },
-            ThrustPoint { time: 2.70, thrust: 60.0 },
-            ThrustPoint { time: 2.88, thrust: 0.0 },
+            ThrustPoint {
+                time: 0.00,
+                thrust: 0.0,
+            },
+            ThrustPoint {
+                time: 0.02,
+                thrust: 250.0,
+            },
+            ThrustPoint {
+                time: 0.05,
+                thrust: 420.0,
+            },
+            ThrustPoint {
+                time: 0.10,
+                thrust: 400.0,
+            },
+            ThrustPoint {
+                time: 0.25,
+                thrust: 360.0,
+            },
+            ThrustPoint {
+                time: 0.50,
+                thrust: 320.0,
+            },
+            ThrustPoint {
+                time: 0.80,
+                thrust: 290.0,
+            },
+            ThrustPoint {
+                time: 1.20,
+                thrust: 260.0,
+            },
+            ThrustPoint {
+                time: 1.60,
+                thrust: 230.0,
+            },
+            ThrustPoint {
+                time: 2.00,
+                thrust: 190.0,
+            },
+            ThrustPoint {
+                time: 2.40,
+                thrust: 140.0,
+            },
+            ThrustPoint {
+                time: 2.70,
+                thrust: 60.0,
+            },
+            ThrustPoint {
+                time: 2.88,
+                thrust: 0.0,
+            },
         ],
         data_source: "embedded".to_string(),
     }
@@ -649,14 +1243,38 @@ fn motor_quest_b4_4() -> Motor {
         dry_mass: 6.5,
         delay_time: 4.0,
         thrust_curve: vec![
-            ThrustPoint { time: 0.00, thrust: 0.0 },
-            ThrustPoint { time: 0.04, thrust: 7.0 },
-            ThrustPoint { time: 0.10, thrust: 10.0 },
-            ThrustPoint { time: 0.25, thrust: 8.0 },
-            ThrustPoint { time: 0.50, thrust: 5.0 },
-            ThrustPoint { time: 0.75, thrust: 3.5 },
-            ThrustPoint { time: 1.00, thrust: 2.0 },
-            ThrustPoint { time: 1.20, thrust: 0.0 },
+            ThrustPoint {
+                time: 0.00,
+                thrust: 0.0,
+            },
+            ThrustPoint {
+                time: 0.04,
+                thrust: 7.0,
+            },
+            ThrustPoint {
+                time: 0.10,
+                thrust: 10.0,
+            },
+            ThrustPoint {
+                time: 0.25,
+                thrust: 8.0,
+            },
+            ThrustPoint {
+                time: 0.50,
+                thrust: 5.0,
+            },
+            ThrustPoint {
+                time: 0.75,
+                thrust: 3.5,
+            },
+            ThrustPoint {
+                time: 1.00,
+                thrust: 2.0,
+            },
+            ThrustPoint {
+                time: 1.20,
+                thrust: 0.0,
+            },
         ],
         data_source: "embedded".to_string(),
     }
@@ -679,16 +1297,46 @@ fn motor_quest_c6_5() -> Motor {
         dry_mass: 10.5,
         delay_time: 5.0,
         thrust_curve: vec![
-            ThrustPoint { time: 0.00, thrust: 0.0 },
-            ThrustPoint { time: 0.05, thrust: 7.0 },
-            ThrustPoint { time: 0.12, thrust: 11.0 },
-            ThrustPoint { time: 0.30, thrust: 9.0 },
-            ThrustPoint { time: 0.55, thrust: 7.0 },
-            ThrustPoint { time: 0.85, thrust: 5.5 },
-            ThrustPoint { time: 1.10, thrust: 4.0 },
-            ThrustPoint { time: 1.35, thrust: 3.0 },
-            ThrustPoint { time: 1.55, thrust: 2.0 },
-            ThrustPoint { time: 1.70, thrust: 0.0 },
+            ThrustPoint {
+                time: 0.00,
+                thrust: 0.0,
+            },
+            ThrustPoint {
+                time: 0.05,
+                thrust: 7.0,
+            },
+            ThrustPoint {
+                time: 0.12,
+                thrust: 11.0,
+            },
+            ThrustPoint {
+                time: 0.30,
+                thrust: 9.0,
+            },
+            ThrustPoint {
+                time: 0.55,
+                thrust: 7.0,
+            },
+            ThrustPoint {
+                time: 0.85,
+                thrust: 5.5,
+            },
+            ThrustPoint {
+                time: 1.10,
+                thrust: 4.0,
+            },
+            ThrustPoint {
+                time: 1.35,
+                thrust: 3.0,
+            },
+            ThrustPoint {
+                time: 1.55,
+                thrust: 2.0,
+            },
+            ThrustPoint {
+                time: 1.70,
+                thrust: 0.0,
+            },
         ],
         data_source: "embedded".to_string(),
     }
@@ -711,14 +1359,38 @@ fn motor_quest_c12_7() -> Motor {
         dry_mass: 11.5,
         delay_time: 7.0,
         thrust_curve: vec![
-            ThrustPoint { time: 0.00, thrust: 0.0 },
-            ThrustPoint { time: 0.03, thrust: 14.0 },
-            ThrustPoint { time: 0.08, thrust: 22.0 },
-            ThrustPoint { time: 0.18, thrust: 19.0 },
-            ThrustPoint { time: 0.35, thrust: 15.0 },
-            ThrustPoint { time: 0.55, thrust: 11.0 },
-            ThrustPoint { time: 0.70, thrust: 6.0 },
-            ThrustPoint { time: 0.80, thrust: 0.0 },
+            ThrustPoint {
+                time: 0.00,
+                thrust: 0.0,
+            },
+            ThrustPoint {
+                time: 0.03,
+                thrust: 14.0,
+            },
+            ThrustPoint {
+                time: 0.08,
+                thrust: 22.0,
+            },
+            ThrustPoint {
+                time: 0.18,
+                thrust: 19.0,
+            },
+            ThrustPoint {
+                time: 0.35,
+                thrust: 15.0,
+            },
+            ThrustPoint {
+                time: 0.55,
+                thrust: 11.0,
+            },
+            ThrustPoint {
+                time: 0.70,
+                thrust: 6.0,
+            },
+            ThrustPoint {
+                time: 0.80,
+                thrust: 0.0,
+            },
         ],
         data_source: "embedded".to_string(),
     }
@@ -741,16 +1413,46 @@ fn motor_quest_d16_6() -> Motor {
         dry_mass: 17.0,
         delay_time: 6.0,
         thrust_curve: vec![
-            ThrustPoint { time: 0.00, thrust: 0.0 },
-            ThrustPoint { time: 0.03, thrust: 18.0 },
-            ThrustPoint { time: 0.08, thrust: 26.0 },
-            ThrustPoint { time: 0.20, thrust: 23.0 },
-            ThrustPoint { time: 0.40, thrust: 18.0 },
-            ThrustPoint { time: 0.60, thrust: 14.0 },
-            ThrustPoint { time: 0.85, thrust: 10.0 },
-            ThrustPoint { time: 1.05, thrust: 7.0 },
-            ThrustPoint { time: 1.20, thrust: 4.0 },
-            ThrustPoint { time: 1.30, thrust: 0.0 },
+            ThrustPoint {
+                time: 0.00,
+                thrust: 0.0,
+            },
+            ThrustPoint {
+                time: 0.03,
+                thrust: 18.0,
+            },
+            ThrustPoint {
+                time: 0.08,
+                thrust: 26.0,
+            },
+            ThrustPoint {
+                time: 0.20,
+                thrust: 23.0,
+            },
+            ThrustPoint {
+                time: 0.40,
+                thrust: 18.0,
+            },
+            ThrustPoint {
+                time: 0.60,
+                thrust: 14.0,
+            },
+            ThrustPoint {
+                time: 0.85,
+                thrust: 10.0,
+            },
+            ThrustPoint {
+                time: 1.05,
+                thrust: 7.0,
+            },
+            ThrustPoint {
+                time: 1.20,
+                thrust: 4.0,
+            },
+            ThrustPoint {
+                time: 1.30,
+                thrust: 0.0,
+            },
         ],
         data_source: "embedded".to_string(),
     }
@@ -781,10 +1483,7 @@ mod tests {
                 "Motor {} has empty manufacturer_abbrev",
                 motor.designation
             );
-            assert!(
-                !motor.designation.is_empty(),
-                "Motor has empty designation"
-            );
+            assert!(!motor.designation.is_empty(), "Motor has empty designation");
 
             // Physical dimensions should be positive
             assert!(
@@ -850,7 +1549,8 @@ mod tests {
 
             // Data source should be "embedded"
             assert_eq!(
-                motor.data_source, "embedded",
+                motor.data_source,
+                "embedded",
                 "Motor {} has wrong data_source {}",
                 motor.full_designation(),
                 motor.data_source
@@ -886,8 +1586,18 @@ mod tests {
 
             // Thrust curve should be valid
             for (i, pt) in motor.thrust_curve.iter().enumerate() {
-                assert!(pt.time >= 0.0, "Negative time at index {} for motor {}", i, motor.full_designation());
-                assert!(pt.thrust >= 0.0, "Negative thrust at index {} for motor {}", i, motor.full_designation());
+                assert!(
+                    pt.time >= 0.0,
+                    "Negative time at index {} for motor {}",
+                    i,
+                    motor.full_designation()
+                );
+                assert!(
+                    pt.thrust >= 0.0,
+                    "Negative thrust at index {} for motor {}",
+                    i,
+                    motor.full_designation()
+                );
                 if i > 0 {
                     assert!(
                         pt.time > motor.thrust_curve[i - 1].time,
@@ -918,11 +1628,7 @@ mod tests {
         let mut seen = std::collections::HashSet::new();
         for motor in &motors {
             let key = format!("{}/{}", motor.manufacturer, motor.designation);
-            assert!(
-                seen.insert(key.clone()),
-                "Duplicate motor: {}",
-                key
-            );
+            assert!(seen.insert(key.clone()), "Duplicate motor: {}", key);
         }
     }
 

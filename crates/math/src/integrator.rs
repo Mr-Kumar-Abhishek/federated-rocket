@@ -235,15 +235,10 @@ impl AdaptiveRK4Integrator {
     ///
     /// Returns `(new_state, actual_dt_used)` where `actual_dt_used` is the
     /// step size that was actually taken (may be smaller if error was too large).
-    pub fn step_adaptive<State, F>(
-        &self,
-        f: &F,
-        state: &State,
-        t: f64,
-        dt: f64,
-    ) -> (State, f64)
+    pub fn step_adaptive<State, F>(&self, f: &F, state: &State, t: f64, dt: f64) -> (State, f64)
     where
-        State: Add<Output = State> + Sub<Output = State> + Mul<f64, Output = State> + Clone + Normed,
+        State:
+            Add<Output = State> + Sub<Output = State> + Mul<f64, Output = State> + Clone + Normed,
         F: Fn(&State, f64) -> State,
     {
         let rk4 = RK4Integrator;
@@ -279,8 +274,7 @@ impl AdaptiveRK4Integrator {
 
         // Suggest next step size
         let dt_next = if scale > 0.0 {
-            (dt_actual * self.safety_factor * scale.powf(-0.2))
-                .clamp(self.min_dt, self.max_dt)
+            (dt_actual * self.safety_factor * scale.powf(-0.2)).clamp(self.min_dt, self.max_dt)
         } else {
             (dt_actual * 2.0).min(self.max_dt)
         };
@@ -423,8 +417,14 @@ mod tests {
     #[test]
     fn test_euler_integrator() {
         let integrator = EulerIntegrator;
-        assert_eq!(<EulerIntegrator as Integrator<OscillatorState>>::name(&integrator), "Euler");
-        assert_eq!(<EulerIntegrator as Integrator<OscillatorState>>::order(&integrator), 1);
+        assert_eq!(
+            <EulerIntegrator as Integrator<OscillatorState>>::name(&integrator),
+            "Euler"
+        );
+        assert_eq!(
+            <EulerIntegrator as Integrator<OscillatorState>>::order(&integrator),
+            1
+        );
 
         let initial = OscillatorState { x: 1.0, v: 0.0 };
         let dt = 0.001;
@@ -445,8 +445,14 @@ mod tests {
     #[test]
     fn test_rk4_integrator() {
         let integrator = RK4Integrator;
-        assert_eq!(<RK4Integrator as Integrator<OscillatorState>>::name(&integrator), "RK4");
-        assert_eq!(<RK4Integrator as Integrator<OscillatorState>>::order(&integrator), 4);
+        assert_eq!(
+            <RK4Integrator as Integrator<OscillatorState>>::name(&integrator),
+            "RK4"
+        );
+        assert_eq!(
+            <RK4Integrator as Integrator<OscillatorState>>::order(&integrator),
+            4
+        );
 
         let initial = OscillatorState { x: 1.0, v: 0.0 };
         let dt = 0.1;
@@ -467,8 +473,14 @@ mod tests {
     #[test]
     fn test_rk6_integrator() {
         let integrator = RK6Integrator;
-        assert_eq!(<RK6Integrator as Integrator<OscillatorState>>::name(&integrator), "RK6");
-        assert_eq!(<RK6Integrator as Integrator<OscillatorState>>::order(&integrator), 6);
+        assert_eq!(
+            <RK6Integrator as Integrator<OscillatorState>>::name(&integrator),
+            "RK6"
+        );
+        assert_eq!(
+            <RK6Integrator as Integrator<OscillatorState>>::order(&integrator),
+            6
+        );
 
         let initial = OscillatorState { x: 1.0, v: 0.0 };
         // Use a very small step to get acceptable accuracy
@@ -534,7 +546,8 @@ mod tests {
 
         while t < tf {
             let dt_remaining = tf - t;
-            let (new_state, new_dt) = adaptive.step_adaptive(&oscillator_deriv, &state, t, dt.min(dt_remaining));
+            let (new_state, new_dt) =
+                adaptive.step_adaptive(&oscillator_deriv, &state, t, dt.min(dt_remaining));
             state = new_state;
             t += dt.min(dt_remaining);
             dt = new_dt;
@@ -573,9 +586,13 @@ mod tests {
     #[test]
     fn test_euler_has_lower_order() {
         // Verify integration order comparison
-        assert!(<EulerIntegrator as Integrator<OscillatorState>>::order(&EulerIntegrator) <
-                <RK4Integrator as Integrator<OscillatorState>>::order(&RK4Integrator));
-        assert!(<RK4Integrator as Integrator<OscillatorState>>::order(&RK4Integrator) <
-                <RK6Integrator as Integrator<OscillatorState>>::order(&RK6Integrator));
+        assert!(
+            <EulerIntegrator as Integrator<OscillatorState>>::order(&EulerIntegrator)
+                < <RK4Integrator as Integrator<OscillatorState>>::order(&RK4Integrator)
+        );
+        assert!(
+            <RK4Integrator as Integrator<OscillatorState>>::order(&RK4Integrator)
+                < <RK6Integrator as Integrator<OscillatorState>>::order(&RK6Integrator)
+        );
     }
 }

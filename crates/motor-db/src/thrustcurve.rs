@@ -1,5 +1,5 @@
-use crate::database::SearchQuery;
 use crate::database::MotorDatabase;
+use crate::database::SearchQuery;
 use crate::types::{Motor, MotorType, ThrustPoint};
 use reqwest::blocking::Client;
 use std::collections::HashMap;
@@ -167,11 +167,7 @@ impl ThrustCurveApi {
             .or(detail.dry_mass)
             .unwrap_or(0.0);
 
-        let delay_time = detail
-            .data
-            .as_ref()
-            .and_then(|d| d.delay)
-            .unwrap_or(0.0);
+        let delay_time = detail.data.as_ref().and_then(|d| d.delay).unwrap_or(0.0);
 
         Some(Motor {
             id: None,
@@ -246,7 +242,11 @@ impl ThrustCurveApi {
 
         // Try to parse as the expected search response
         let search_response: ApiSearchResponse = serde_json::from_str(&body).map_err(|e| {
-            ApiError::Parse(format!("Failed to parse search response: {} (body: {}...)", e, &body[..body.len().min(200)]))
+            ApiError::Parse(format!(
+                "Failed to parse search response: {} (body: {}...)",
+                e,
+                &body[..body.len().min(200)]
+            ))
         })?;
 
         let motors: Vec<Motor> = search_response
@@ -268,11 +268,7 @@ impl ThrustCurveApi {
     /// Get detailed information about a specific motor from the API.
     pub fn get_motor_detail(&self, motor_id: &str) -> Result<Motor, ApiError> {
         let url = format!("{}/motor/{}", self.base_url, motor_id);
-        let response = self
-            .client
-            .get(&url)
-            .send()
-            .map_err(ApiError::Http)?;
+        let response = self.client.get(&url).send().map_err(ApiError::Http)?;
 
         if !response.status().is_success() {
             return Err(ApiError::Api(format!(
@@ -293,7 +289,10 @@ impl ThrustCurveApi {
         })?;
 
         let mut motor = Self::api_detail_to_motor(&detail).ok_or_else(|| {
-            ApiError::Parse(format!("Motor detail response missing motor_id for motor {}", motor_id))
+            ApiError::Parse(format!(
+                "Motor detail response missing motor_id for motor {}",
+                motor_id
+            ))
         })?;
 
         // Try to fetch thrust curve
@@ -301,7 +300,10 @@ impl ThrustCurveApi {
             Ok(curve) => motor.thrust_curve = curve,
             Err(e) => {
                 // If thrust curve fails, motor is still usable without it
-                eprintln!("Warning: Failed to fetch thrust curve for {}: {}", motor_id, e);
+                eprintln!(
+                    "Warning: Failed to fetch thrust curve for {}: {}",
+                    motor_id, e
+                );
             }
         }
 
@@ -311,11 +313,7 @@ impl ThrustCurveApi {
     /// Download a thrust curve CSV from the ThrustCurve API and parse it.
     pub fn get_thrust_curve(&self, motor_id: &str) -> Result<Vec<ThrustPoint>, ApiError> {
         let url = format!("{}/motor/{}/thrust_curve", self.base_url, motor_id);
-        let response = self
-            .client
-            .get(&url)
-            .send()
-            .map_err(ApiError::Http)?;
+        let response = self.client.get(&url).send().map_err(ApiError::Http)?;
 
         if !response.status().is_success() {
             return Err(ApiError::Api(format!(
@@ -335,9 +333,8 @@ impl ThrustCurveApi {
 
         let mut points = Vec::new();
         for result in reader.records() {
-            let record = result.map_err(|e| {
-                ApiError::Parse(format!("CSV parse error in thrust curve: {}", e))
-            })?;
+            let record = result
+                .map_err(|e| ApiError::Parse(format!("CSV parse error in thrust curve: {}", e)))?;
 
             if record.len() < 2 {
                 continue;
@@ -366,17 +363,15 @@ impl ThrustCurveApi {
 
         for motor_id in motor_ids {
             match self.get_motor_detail(motor_id) {
-                Ok(motor) => {
-                    match db.add_motor(&motor) {
-                        Ok(_) => count += 1,
-                        Err(e) => {
-                            eprintln!(
-                                "Warning: Failed to store motor {} in database: {}",
-                                motor_id, e
-                            );
-                        }
+                Ok(motor) => match db.add_motor(&motor) {
+                    Ok(_) => count += 1,
+                    Err(e) => {
+                        eprintln!(
+                            "Warning: Failed to store motor {} in database: {}",
+                            motor_id, e
+                        );
                     }
-                }
+                },
                 Err(e) => {
                     eprintln!("Warning: Failed to fetch motor {}: {}", motor_id, e);
                 }

@@ -18,7 +18,7 @@ pub struct Motor {
     pub dry_mass: f64,        // g
     pub delay_time: f64,      // s (0 = plugged)
     pub thrust_curve: Vec<ThrustPoint>,
-    pub data_source: String,  // "embedded", "thrustcurve", "user"
+    pub data_source: String, // "embedded", "thrustcurve", "user"
 }
 
 impl Motor {
@@ -149,11 +149,32 @@ impl MotorType {
 pub enum ImpulseClass {
     /// Motors smaller than A (1/4A, 1/2A)
     Micro,
-    A, B, C, D, E, F, G,
-    H, I, J, K, L, M,
-    N, O, P, Q, R,
-    S, T, U, V, W,
-    X, Y, Z,
+    A,
+    B,
+    C,
+    D,
+    E,
+    F,
+    G,
+    H,
+    I,
+    J,
+    K,
+    L,
+    M,
+    N,
+    O,
+    P,
+    Q,
+    R,
+    S,
+    T,
+    U,
+    V,
+    W,
+    X,
+    Y,
+    Z,
 }
 
 impl ImpulseClass {
@@ -422,9 +443,18 @@ mod tests {
             dry_mass: 10.0,
             delay_time: 0.0,
             thrust_curve: vec![
-                ThrustPoint { time: 0.0, thrust: 0.0 },
-                ThrustPoint { time: 1.0, thrust: 10.0 },
-                ThrustPoint { time: 2.0, thrust: 0.0 },
+                ThrustPoint {
+                    time: 0.0,
+                    thrust: 0.0,
+                },
+                ThrustPoint {
+                    time: 1.0,
+                    thrust: 10.0,
+                },
+                ThrustPoint {
+                    time: 2.0,
+                    thrust: 0.0,
+                },
             ],
             data_source: "test".to_string(),
         };

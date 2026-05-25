@@ -514,11 +514,7 @@ mod tests {
         // Rotating by the half-way quaternion should give 45°
         let v = r05.rotate(Vector3D::unit_x());
         assert!(v.approx_eq(
-            &Vector3D::new(
-                (FRAC_PI_4).cos(),
-                (FRAC_PI_4).sin(),
-                0.0
-            ),
+            &Vector3D::new((FRAC_PI_4).cos(), (FRAC_PI_4).sin(), 0.0),
             1e-15
         ));
     }

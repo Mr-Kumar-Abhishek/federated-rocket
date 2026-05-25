@@ -1,3 +1,5 @@
+#![allow(clippy::needless_range_loop)]
+
 use crate::vector::Vector3D;
 use serde::{Deserialize, Serialize};
 use std::{
@@ -46,11 +48,7 @@ impl Matrix3x3 {
     #[inline]
     pub fn from_columns(c1: Vector3D, c2: Vector3D, c3: Vector3D) -> Self {
         Self {
-            data: [
-                [c1.x, c2.x, c3.x],
-                [c1.y, c2.y, c3.y],
-                [c1.z, c2.z, c3.z],
-            ],
+            data: [[c1.x, c2.x, c3.x], [c1.y, c2.y, c3.y], [c1.z, c2.z, c3.z]],
         }
     }
 
@@ -60,11 +58,7 @@ impl Matrix3x3 {
         let cos_a = angle.cos();
         let sin_a = angle.sin();
         Self {
-            data: [
-                [1.0, 0.0, 0.0],
-                [0.0, cos_a, -sin_a],
-                [0.0, sin_a, cos_a],
-            ],
+            data: [[1.0, 0.0, 0.0], [0.0, cos_a, -sin_a], [0.0, sin_a, cos_a]],
         }
     }
 
@@ -74,11 +68,7 @@ impl Matrix3x3 {
         let cos_a = angle.cos();
         let sin_a = angle.sin();
         Self {
-            data: [
-                [cos_a, 0.0, sin_a],
-                [0.0, 1.0, 0.0],
-                [-sin_a, 0.0, cos_a],
-            ],
+            data: [[cos_a, 0.0, sin_a], [0.0, 1.0, 0.0], [-sin_a, 0.0, cos_a]],
         }
     }
 
@@ -88,11 +78,7 @@ impl Matrix3x3 {
         let cos_a = angle.cos();
         let sin_a = angle.sin();
         Self {
-            data: [
-                [cos_a, -sin_a, 0.0],
-                [sin_a, cos_a, 0.0],
-                [0.0, 0.0, 1.0],
-            ],
+            data: [[cos_a, -sin_a, 0.0], [sin_a, cos_a, 0.0], [0.0, 0.0, 1.0]],
         }
     }
 
@@ -658,9 +644,11 @@ mod tests {
     #[test]
     fn test_approx_eq() {
         let a = Matrix3x3::identity();
-        let b = Matrix3x3::new(
-            [[1.0 + 1e-10, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0 + 1e-10]],
-        );
+        let b = Matrix3x3::new([
+            [1.0 + 1e-10, 0.0, 0.0],
+            [0.0, 1.0, 0.0],
+            [0.0, 0.0, 1.0 + 1e-10],
+        ]);
         assert!(a.approx_eq(&b, 1e-9));
         assert!(!a.approx_eq(&b, 1e-11));
     }

@@ -38,10 +38,7 @@ impl AeroForces {
 
     /// Returns the magnitude of the total aerodynamic force vector.
     pub fn total_force(&self) -> f64 {
-        (self.drag * self.drag
-            + self.lift * self.lift
-            + self.side_force * self.side_force)
-            .sqrt()
+        (self.drag * self.drag + self.lift * self.lift + self.side_force * self.side_force).sqrt()
     }
 }
 

@@ -200,7 +200,12 @@ mod tests {
     fn test_prandtl_glauert_at_mach_0_5() {
         let pg = SupersonicCorrections::prandtl_glauert_factor(0.5);
         let expected = 1.0 / (1.0 - 0.25_f64).sqrt();
-        assert!((pg - expected).abs() < 1e-10, "PG at M=0.5: {} vs {}", pg, expected);
+        assert!(
+            (pg - expected).abs() < 1e-10,
+            "PG at M=0.5: {} vs {}",
+            pg,
+            expected
+        );
     }
 
     #[test]
@@ -225,7 +230,12 @@ mod tests {
         let kt = SupersonicCorrections::karman_tsien_factor(0.5);
         let beta = (1.0 - 0.25_f64).sqrt();
         let expected = 1.0 / (beta + 0.25 / (1.0 + beta));
-        assert!((kt - expected).abs() < 1e-10, "KT at M=0.5: {} vs {}", kt, expected);
+        assert!(
+            (kt - expected).abs() < 1e-10,
+            "KT at M=0.5: {} vs {}",
+            kt,
+            expected
+        );
     }
 
     #[test]
@@ -244,7 +254,12 @@ mod tests {
     fn test_supersonic_normal_force_at_mach_2() {
         let cn = SupersonicCorrections::supersonic_normal_force(2.0);
         let expected = 4.0 / (4.0 - 1.0_f64).sqrt();
-        assert!((cn - expected).abs() < 1e-10, "CNα at M=2: {} vs {}", cn, expected);
+        assert!(
+            (cn - expected).abs() < 1e-10,
+            "CNα at M=2: {} vs {}",
+            cn,
+            expected
+        );
     }
 
     #[test]

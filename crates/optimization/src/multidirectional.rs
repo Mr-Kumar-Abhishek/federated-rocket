@@ -65,10 +65,7 @@ impl MultidirectionalSearch {
         let mut evaluations = n; // initial evaluations
 
         // Track the worst value from the initial simplex for reporting
-        let initial_worst = values
-            .iter()
-            .cloned()
-            .fold(f64::NEG_INFINITY, f64::max);
+        let initial_worst = values.iter().cloned().fold(f64::NEG_INFINITY, f64::max);
 
         for iteration in 0..self.max_iterations {
             iterations = iteration + 1;
@@ -126,10 +123,7 @@ impl MultidirectionalSearch {
             // Compute centroid of all but the worst vertex
             let centroid: Vec<f64> = (0..dim)
                 .map(|j| {
-                    let sum: f64 = indices[..n - 1]
-                        .iter()
-                        .map(|&i| simplex[i][j])
-                        .sum();
+                    let sum: f64 = indices[..n - 1].iter().map(|&i| simplex[i][j]).sum();
                     sum / (n - 1) as f64
                 })
                 .collect();
@@ -183,8 +177,7 @@ impl MultidirectionalSearch {
                     // Shrink all vertices toward the best vertex
                     for i in 1..n {
                         for j in 0..dim {
-                            simplex[i][j] =
-                                simplex[0][j] + 0.5 * (simplex[i][j] - simplex[0][j]);
+                            simplex[i][j] = simplex[0][j] + 0.5 * (simplex[i][j] - simplex[0][j]);
                         }
                         values[i] = f(&simplex[i]);
                         evaluations += 1;
@@ -280,16 +273,8 @@ mod tests {
         let y_opt = result.parameters[1].value;
 
         // Should be close to the minimum (1, 1) — allow generous tolerance
-        assert!(
-            (x_opt - 1.0).abs() < 0.5,
-            "x_opt ≈ 1, got {}",
-            x_opt
-        );
-        assert!(
-            (y_opt - 1.0).abs() < 0.5,
-            "y_opt ≈ 1, got {}",
-            y_opt
-        );
+        assert!((x_opt - 1.0).abs() < 0.5, "x_opt ≈ 1, got {}", x_opt);
+        assert!((y_opt - 1.0).abs() < 0.5, "y_opt ≈ 1, got {}", y_opt);
         assert!(result.iterations > 0);
         assert!(!result.history.is_empty());
     }
@@ -308,16 +293,8 @@ mod tests {
         let x_opt = result.parameters[0].value;
         let y_opt = result.parameters[1].value;
 
-        assert!(
-            x_opt.abs() < 0.1,
-            "x_opt ≈ 0, got {}",
-            x_opt
-        );
-        assert!(
-            y_opt.abs() < 0.1,
-            "y_opt ≈ 0, got {}",
-            y_opt
-        );
+        assert!(x_opt.abs() < 0.1, "x_opt ≈ 0, got {}", x_opt);
+        assert!(y_opt.abs() < 0.1, "y_opt ≈ 0, got {}", y_opt);
     }
 
     #[test]
@@ -333,11 +310,7 @@ mod tests {
         let result = ms.minimize(|p| (p[0] - 3.0).powi(2), &simplex);
 
         let x_opt = result.parameters[0].value;
-        assert!(
-            (x_opt - 3.0).abs() < 0.5,
-            "x_opt ≈ 3, got {}",
-            x_opt
-        );
+        assert!((x_opt - 3.0).abs() < 0.5, "x_opt ≈ 3, got {}", x_opt);
         assert!(result.converged || result.iterations >= 1);
     }
 
@@ -392,7 +365,10 @@ mod tests {
         };
 
         let result = ms.minimize(rosenbrock, &default_simplex_2d());
-        assert!(!result.converged, "Should not converge with tight tolerance");
+        assert!(
+            !result.converged,
+            "Should not converge with tight tolerance"
+        );
         assert_eq!(result.iterations, 5);
     }
 

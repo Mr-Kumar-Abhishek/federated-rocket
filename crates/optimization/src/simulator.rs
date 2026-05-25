@@ -110,12 +110,8 @@ impl SimulatorObjective {
                     -1000.0 // no ground hit → very safe
                 }
             }
-            OptimizationGoal::TargetAltitude(target) => {
-                (result.max_altitude - target).abs()
-            }
-            OptimizationGoal::TargetVelocity(target) => {
-                (result.max_velocity - target).abs()
-            }
+            OptimizationGoal::TargetAltitude(target) => (result.max_altitude - target).abs(),
+            OptimizationGoal::TargetVelocity(target) => (result.max_velocity - target).abs(),
             OptimizationGoal::Custom(_) => result.max_altitude,
         }
     }
@@ -204,22 +200,15 @@ mod tests {
         let tree = make_test_rocket();
         let motor = Some(make_test_motor());
 
-        let objective = SimulatorObjective::new(
-            engine,
-            tree,
-            motor,
-            OptimizationGoal::MaximizeAltitude,
-        );
+        let objective =
+            SimulatorObjective::new(engine, tree, motor, OptimizationGoal::MaximizeAltitude);
 
         // Check that default models are set
         assert_eq!(
             objective.atmosphere.name(),
             "International Standard Atmosphere (ISA)"
         );
-        assert_eq!(
-            objective.gravity.name(),
-            "Constant Gravity (9.80665 m/s²)"
-        );
+        assert_eq!(objective.gravity.name(), "Constant Gravity (9.80665 m/s²)");
         assert_eq!(objective.wind.name(), "No Wind");
     }
 
@@ -238,12 +227,8 @@ mod tests {
         let tree = make_test_rocket();
         let motor = Some(make_test_motor());
 
-        let objective = SimulatorObjective::new(
-            engine,
-            tree,
-            motor,
-            OptimizationGoal::MaximizeAltitude,
-        );
+        let objective =
+            SimulatorObjective::new(engine, tree, motor, OptimizationGoal::MaximizeAltitude);
 
         let value = objective.evaluate(&[]);
 
@@ -270,12 +255,8 @@ mod tests {
         let tree = make_test_rocket();
         let motor = Some(make_test_motor());
 
-        let objective = SimulatorObjective::new(
-            engine,
-            tree,
-            motor,
-            OptimizationGoal::MaximizeVelocity,
-        );
+        let objective =
+            SimulatorObjective::new(engine, tree, motor, OptimizationGoal::MaximizeVelocity);
 
         let value = objective.evaluate(&[]);
 
@@ -297,8 +278,7 @@ mod tests {
         let engine = SimulationEngine::new(config, event_config);
         let tree = make_test_rocket();
 
-        let objective =
-            SimulatorObjective::new(engine, tree, None, OptimizationGoal::MinimizeMass);
+        let objective = SimulatorObjective::new(engine, tree, None, OptimizationGoal::MinimizeMass);
 
         let value = objective.evaluate(&[]);
 
@@ -325,12 +305,8 @@ mod tests {
         let tree = make_test_rocket();
         let motor = Some(make_test_motor());
 
-        let objective = SimulatorObjective::new(
-            engine,
-            tree,
-            motor,
-            OptimizationGoal::TargetAltitude(100.0),
-        );
+        let objective =
+            SimulatorObjective::new(engine, tree, motor, OptimizationGoal::TargetAltitude(100.0));
 
         let value = objective.evaluate(&[]);
 
@@ -357,12 +333,8 @@ mod tests {
         let tree = make_test_rocket();
         let motor = Some(make_test_motor());
 
-        let objective = SimulatorObjective::new(
-            engine,
-            tree,
-            motor,
-            OptimizationGoal::TargetVelocity(50.0),
-        );
+        let objective =
+            SimulatorObjective::new(engine, tree, motor, OptimizationGoal::TargetVelocity(50.0));
 
         let value = objective.evaluate(&[]);
 
@@ -413,19 +385,13 @@ mod tests {
         let engine = SimulationEngine::new(config, event_config);
         let tree = make_test_rocket();
 
-        let mut objective = SimulatorObjective::new(
-            engine,
-            tree,
-            None,
-            OptimizationGoal::MinimizeMass,
-        );
+        let mut objective =
+            SimulatorObjective::new(engine, tree, None, OptimizationGoal::MinimizeMass);
 
         // Replace with a custom model
-        objective.atmosphere =
-            Box::new(federated_rocket_physics::atmosphere::IsothermalAtmosphere::new(
-                300.0,
-                100000.0,
-            ));
+        objective.atmosphere = Box::new(
+            federated_rocket_physics::atmosphere::IsothermalAtmosphere::new(300.0, 100000.0),
+        );
 
         assert_eq!(objective.atmosphere.name(), "Isothermal Atmosphere");
     }

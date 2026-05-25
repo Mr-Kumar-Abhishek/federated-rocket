@@ -99,9 +99,14 @@ impl Default for NoseConeData {
             base_radius: Quantity::new(0.0, crate::units::Unit::Meter),
             shape: NoseConeShape::Conical,
             thickness: Quantity::new(0.0, crate::units::Unit::Meter),
-            material: crate::material::get_material(crate::material::Material::KRAFT_TUBE).unwrap_or_else(|| {
-                crate::material::Material::new("Default", crate::material::MaterialType::Bulk, Quantity::new(700.0, crate::units::Unit::Kilogram))
-            }),
+            material: crate::material::get_material(crate::material::Material::KRAFT_TUBE)
+                .unwrap_or_else(|| {
+                    crate::material::Material::new(
+                        "Default",
+                        crate::material::MaterialType::Bulk,
+                        Quantity::new(700.0, crate::units::Unit::Kilogram),
+                    )
+                }),
             color: None,
             shoulder_length: Quantity::new(0.0, crate::units::Unit::Meter),
             shoulder_radius: Quantity::new(0.0, crate::units::Unit::Meter),
@@ -250,9 +255,14 @@ impl Default for FinSetData {
             sweep_length: Quantity::new(0.0, crate::units::Unit::Meter),
             thickness: Quantity::new(0.0, crate::units::Unit::Meter),
             cross_section: AirfoilType::Square,
-            material: crate::material::get_material(crate::material::Material::BALSA).unwrap_or_else(|| {
-                crate::material::Material::new("Default", crate::material::MaterialType::Bulk, Quantity::new(600.0, crate::units::Unit::Kilogram))
-            }),
+            material: crate::material::get_material(crate::material::Material::BALSA)
+                .unwrap_or_else(|| {
+                    crate::material::Material::new(
+                        "Default",
+                        crate::material::MaterialType::Bulk,
+                        Quantity::new(600.0, crate::units::Unit::Kilogram),
+                    )
+                }),
             color: None,
             cant_angle: Quantity::new(0.0, crate::units::Unit::Degree),
             fin_placement: FinPlacement::Normal,
@@ -631,16 +641,8 @@ impl RocketComponent {
                 let mut min = d.position;
                 let mut max = d.position;
                 for p in &d.points {
-                    min = Coordinate::new(
-                        min.x.min(p.x),
-                        min.y.min(p.y),
-                        min.z.min(p.z),
-                    );
-                    max = Coordinate::new(
-                        max.x.max(p.x),
-                        max.y.max(p.y),
-                        max.z.max(p.z),
-                    );
+                    min = Coordinate::new(min.x.min(p.x), min.y.min(p.y), min.z.min(p.z));
+                    max = Coordinate::new(max.x.max(p.x), max.y.max(p.y), max.z.max(p.z));
                 }
                 (min, max)
             }
@@ -724,7 +726,11 @@ mod tests {
     use crate::units::{Quantity, Unit};
 
     fn test_material() -> Material {
-        Material::new("TestMaterial", MaterialType::Bulk, Quantity::new(1000.0, Unit::Kilogram))
+        Material::new(
+            "TestMaterial",
+            MaterialType::Bulk,
+            Quantity::new(1000.0, Unit::Kilogram),
+        )
     }
 
     #[test]
@@ -931,91 +937,218 @@ mod tests {
         let pos = Coordinate::origin();
 
         let _ = RocketComponent::BodyTube(BodyTubeData {
-            name: s(), position: pos, length: q(), outer_radius: q(), inner_radius: q(),
-            material: mt.clone(), color: None, has_motor_mount: false,
+            name: s(),
+            position: pos,
+            length: q(),
+            outer_radius: q(),
+            inner_radius: q(),
+            material: mt.clone(),
+            color: None,
+            has_motor_mount: false,
         });
         let _ = RocketComponent::NoseCone(NoseConeData {
-            name: s(), position: pos, length: q(), base_radius: q(), shape: NoseConeShape::Conical,
-            thickness: q(), material: mt.clone(), color: None,
-            shoulder_length: q(), shoulder_radius: q(), is_blunted: false, blunt_radius: q(),
+            name: s(),
+            position: pos,
+            length: q(),
+            base_radius: q(),
+            shape: NoseConeShape::Conical,
+            thickness: q(),
+            material: mt.clone(),
+            color: None,
+            shoulder_length: q(),
+            shoulder_radius: q(),
+            is_blunted: false,
+            blunt_radius: q(),
         });
         let _ = RocketComponent::Transition(TransitionData {
-            name: s(), position: pos, length: q(), fore_radius: q(), aft_radius: q(),
-            shape: TransitionShape::Conical, thickness: q(), material: mt.clone(), color: None,
-            shoulder_length: q(), shoulder_radius: q(),
+            name: s(),
+            position: pos,
+            length: q(),
+            fore_radius: q(),
+            aft_radius: q(),
+            shape: TransitionShape::Conical,
+            thickness: q(),
+            material: mt.clone(),
+            color: None,
+            shoulder_length: q(),
+            shoulder_radius: q(),
         });
         let _ = RocketComponent::Parachute(ParachuteData {
-            name: s(), position: pos, diameter: q(), cd: 1.0, material: mt.clone(), color: None,
+            name: s(),
+            position: pos,
+            diameter: q(),
+            cd: 1.0,
+            material: mt.clone(),
+            color: None,
         });
         let _ = RocketComponent::Streamer(StreamerData {
-            name: s(), position: pos, length: q(), width: q(), cd: 1.0, material: mt.clone(), color: None,
+            name: s(),
+            position: pos,
+            length: q(),
+            width: q(),
+            cd: 1.0,
+            material: mt.clone(),
+            color: None,
         });
         let _ = RocketComponent::MassComponent(MassComponentData {
-            name: s(), position: pos, mass: q(), radius: q(), material: mt.clone(), color: None,
+            name: s(),
+            position: pos,
+            mass: q(),
+            radius: q(),
+            material: mt.clone(),
+            color: None,
         });
         let _ = RocketComponent::Bulkhead(BulkheadData {
-            name: s(), position: pos, outer_radius: q(), inner_radius: q(), thickness: q(),
-            material: mt.clone(), color: None,
+            name: s(),
+            position: pos,
+            outer_radius: q(),
+            inner_radius: q(),
+            thickness: q(),
+            material: mt.clone(),
+            color: None,
         });
         let _ = RocketComponent::CenteringRing(CenteringRingData {
-            name: s(), position: pos, outer_radius: q(), inner_radius: q(), length: q(),
-            material: mt.clone(), color: None,
+            name: s(),
+            position: pos,
+            outer_radius: q(),
+            inner_radius: q(),
+            length: q(),
+            material: mt.clone(),
+            color: None,
         });
         let _ = RocketComponent::EngineBlock(EngineBlockData {
-            name: s(), position: pos, radius: q(), length: q(), material: mt.clone(), color: None,
+            name: s(),
+            position: pos,
+            radius: q(),
+            length: q(),
+            material: mt.clone(),
+            color: None,
         });
         let _ = RocketComponent::LaunchLug(LaunchLugData {
-            name: s(), position: pos, outer_radius: q(), inner_radius: q(), length: q(),
-            material: mt.clone(), color: None,
+            name: s(),
+            position: pos,
+            outer_radius: q(),
+            inner_radius: q(),
+            length: q(),
+            material: mt.clone(),
+            color: None,
         });
         let _ = RocketComponent::RailButton(RailButtonData {
-            name: s(), position: pos, outer_radius: q(), inner_radius: q(), height: q(),
-            material: mt.clone(), color: None,
+            name: s(),
+            position: pos,
+            outer_radius: q(),
+            inner_radius: q(),
+            height: q(),
+            material: mt.clone(),
+            color: None,
         });
         let _ = RocketComponent::FinSet(FinSetData {
-            name: s(), position: pos, fin_count: 3, root_chord: q(), tip_chord: q(), span: q(),
-            sweep_length: q(), thickness: q(), cross_section: AirfoilType::Square,
-            material: mt.clone(), color: None, cant_angle: q(), fin_placement: FinPlacement::Normal,
+            name: s(),
+            position: pos,
+            fin_count: 3,
+            root_chord: q(),
+            tip_chord: q(),
+            span: q(),
+            sweep_length: q(),
+            thickness: q(),
+            cross_section: AirfoilType::Square,
+            material: mt.clone(),
+            color: None,
+            cant_angle: q(),
+            fin_placement: FinPlacement::Normal,
         });
         let _ = RocketComponent::FreeformFinSet(FreeformFinSetData {
-            name: s(), position: pos, fin_count: 3, points: vec![Coordinate::origin()],
-            thickness: q(), cross_section: AirfoilType::Square, material: mt.clone(), color: None,
-            cant_angle: q(), fin_placement: FinPlacement::Normal,
+            name: s(),
+            position: pos,
+            fin_count: 3,
+            points: vec![Coordinate::origin()],
+            thickness: q(),
+            cross_section: AirfoilType::Square,
+            material: mt.clone(),
+            color: None,
+            cant_angle: q(),
+            fin_placement: FinPlacement::Normal,
         });
         let _ = RocketComponent::Pod(PodData {
-            name: s(), position: pos, length: q(), radius: q(), color: None,
+            name: s(),
+            position: pos,
+            length: q(),
+            radius: q(),
+            color: None,
         });
         let _ = RocketComponent::InnerTube(InnerTubeData {
-            name: s(), position: pos, length: q(), outer_radius: q(), inner_radius: q(),
-            material: mt.clone(), color: None,
+            name: s(),
+            position: pos,
+            length: q(),
+            outer_radius: q(),
+            inner_radius: q(),
+            material: mt.clone(),
+            color: None,
         });
         let _ = RocketComponent::TubeCoupler(TubeCouplerData {
-            name: s(), position: pos, length: q(), outer_radius: q(), inner_radius: q(),
-            material: mt.clone(), color: None,
+            name: s(),
+            position: pos,
+            length: q(),
+            outer_radius: q(),
+            inner_radius: q(),
+            material: mt.clone(),
+            color: None,
         });
         let _ = RocketComponent::Sleeve(SleeveData {
-            name: s(), position: pos, length: q(), outer_radius: q(), material: mt.clone(), color: None,
+            name: s(),
+            position: pos,
+            length: q(),
+            outer_radius: q(),
+            material: mt.clone(),
+            color: None,
         });
         let _ = RocketComponent::Engine(EngineData {
-            name: s(), position: pos, manufacturer: s(), designation: s(), diameter: q(), length: q(),
-            total_impulse: q(), delay_time: q(), propellant_mass: q(), dry_mass: q(), color: None,
+            name: s(),
+            position: pos,
+            manufacturer: s(),
+            designation: s(),
+            diameter: q(),
+            length: q(),
+            total_impulse: q(),
+            delay_time: q(),
+            propellant_mass: q(),
+            dry_mass: q(),
+            color: None,
         });
         let _ = RocketComponent::Booster(BoosterData {
-            name: s(), position: pos, length: q(), radius: q(), color: None, separation_event: None,
+            name: s(),
+            position: pos,
+            length: q(),
+            radius: q(),
+            color: None,
+            separation_event: None,
         });
         let _ = RocketComponent::Payload(PayloadData {
-            name: s(), position: pos, length: q(), radius: q(), color: None,
+            name: s(),
+            position: pos,
+            length: q(),
+            radius: q(),
+            color: None,
         });
         let _ = RocketComponent::RecoveryDevice(RecoveryDeviceData {
-            name: s(), position: pos, deployment_type: DeploymentType::Apogee, color: None,
+            name: s(),
+            position: pos,
+            deployment_type: DeploymentType::Apogee,
+            color: None,
         });
         let _ = RocketComponent::ComponentAssembly(ComponentAssemblyData {
-            name: s(), position: pos, color: None,
+            name: s(),
+            position: pos,
+            color: None,
         });
     }
 
     /// Helper: short string
-    fn s() -> String { "test".to_string() }
+    fn s() -> String {
+        "test".to_string()
+    }
     /// Helper: 1 meter quantity
-    fn q() -> Quantity<f64> { Quantity::new(1.0, Unit::Meter) }
+    fn q() -> Quantity<f64> {
+        Quantity::new(1.0, Unit::Meter)
+    }
 }

@@ -87,9 +87,7 @@ pub fn show(app: &mut FederatedRocketApp, ui: &mut egui::Ui) {
 
     // Progress indicator
     if app.is_simulating {
-        ui.add(
-            egui::ProgressBar::new(app.simulation_progress).text("Simulating..."),
-        );
+        ui.add(egui::ProgressBar::new(app.simulation_progress).text("Simulating..."));
     }
 
     ui.separator();
@@ -97,10 +95,7 @@ pub fn show(app: &mut FederatedRocketApp, ui: &mut egui::Ui) {
     // Quick stats
     if let Some(ref result) = app.simulation_result {
         ui.heading("Quick Stats");
-        ui.label(format!(
-            "Flight time: {:.2}s",
-            result.flight_time
-        ));
+        ui.label(format!("Flight time: {:.2}s", result.flight_time));
         ui.label(format!(
             "Max altitude: {:.1}m ({:.1}ft)",
             result.max_altitude,

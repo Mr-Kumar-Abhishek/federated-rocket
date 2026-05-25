@@ -1,4 +1,4 @@
-use federated_rocket_math::interpolator::{Interpolator, InterpolationMethod};
+use federated_rocket_math::interpolator::{InterpolationMethod, Interpolator};
 use serde::{Deserialize, Serialize};
 use std::cell::RefCell;
 use std::fs;
@@ -170,10 +170,7 @@ impl MotorModel {
     ///
     /// This is the negative rate at which propellant mass decreases.
     pub fn mass_flow_rate(&self, time: f64) -> f64 {
-        if self.total_impulse <= 0.0
-            || self.propellant_mass <= 0.0
-            || !self.is_burning(time)
-        {
+        if self.total_impulse <= 0.0 || self.propellant_mass <= 0.0 || !self.is_burning(time) {
             return 0.0;
         }
         let thrust = self.thrust_at_time(time);
@@ -189,8 +186,8 @@ impl MotorModel {
     /// The CSV should have a header row and use commas as delimiters.
     /// Expects time in seconds and thrust in Newtons.
     pub fn load_from_csv(&mut self, path: &str) -> Result<(), String> {
-        let content =
-            fs::read_to_string(path).map_err(|e| format!("Failed to read CSV file '{}': {}", path, e))?;
+        let content = fs::read_to_string(path)
+            .map_err(|e| format!("Failed to read CSV file '{}': {}", path, e))?;
 
         let mut rdr = csv::ReaderBuilder::new()
             .has_headers(true)
@@ -200,8 +197,7 @@ impl MotorModel {
         let mut points_found = 0u32;
         let mut max_time = 0.0f64;
         for result in rdr.records() {
-            let record =
-                result.map_err(|e| format!("CSV parse error at '{}': {}", path, e))?;
+            let record = result.map_err(|e| format!("CSV parse error at '{}': {}", path, e))?;
             if record.len() < 2 {
                 continue;
             }

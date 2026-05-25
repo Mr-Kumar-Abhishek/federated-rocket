@@ -9,35 +9,30 @@ impl BodyFlapAero {
         flap_area: f64,
         reference_area: f64,
     ) -> f64 {
-        if reference_area <= 0.0 { return 0.0; }
+        if reference_area <= 0.0 {
+            return 0.0;
+        }
         let area_ratio = flap_area / reference_area;
         2.0 * deflection_angle.sin().powi(2) * (deflection_angle / 2.0).cos() * area_ratio
     }
-    
+
     /// Hinge moment coefficient for servo sizing
-    pub fn hinge_moment_coefficient(
-        deflection_angle: f64,
-        flap_chord: f64,
-        flap_span: f64,
-    ) -> f64 {
+    pub fn hinge_moment_coefficient(deflection_angle: f64, flap_chord: f64, flap_span: f64) -> f64 {
         // Simplified hinge moment: Cm_hinge = 0.25 * CN * (chord / span)
         0.25 * deflection_angle.sin() * flap_chord / flap_span.max(1e-6)
     }
-    
+
     /// Canard-body interference factor
     pub fn canard_interference(canard_span: f64, body_diameter: f64) -> f64 {
         let span_ratio = canard_span / body_diameter.max(1e-6);
         1.0 + 0.5 / (1.0 + span_ratio)
     }
-    
+
     /// Calculate downwash effect of canards on main fins
-    pub fn downwash_angle(
-        canard_aoa: f64,
-        canard_span: f64,
-        distance_to_fin: f64,
-    ) -> f64 {
+    pub fn downwash_angle(canard_aoa: f64, canard_span: f64, distance_to_fin: f64) -> f64 {
         // Simplified downwash model
-        let epsilon = 2.0 * canard_aoa / (std::f64::consts::PI * canard_span.powi(2) / distance_to_fin.powi(2));
+        let epsilon = 2.0 * canard_aoa
+            / (std::f64::consts::PI * canard_span.powi(2) / distance_to_fin.powi(2));
         epsilon.min(canard_aoa * 0.5) // limit max downwash
     }
 }
@@ -73,7 +68,10 @@ mod tests {
         let cn1 = BodyFlapAero::cn_flap(0.1, 0.01, 0.001);
         let cn2 = BodyFlapAero::cn_flap(0.1, 0.02, 0.001);
         // Doubling area should double CN
-        assert!((cn2 / cn1 - 2.0).abs() < 1e-10, "CN should scale with area ratio");
+        assert!(
+            (cn2 / cn1 - 2.0).abs() < 1e-10,
+            "CN should scale with area ratio"
+        );
     }
 
     #[test]
@@ -81,7 +79,10 @@ mod tests {
         let cn_pos = BodyFlapAero::cn_flap(0.2, 0.01, 0.001);
         let cn_neg = BodyFlapAero::cn_flap(-0.2, 0.01, 0.001);
         // sin² is symmetric, cos is even → CN should be same
-        assert!((cn_pos - cn_neg).abs() < 1e-12, "CN should be symmetric for ±δ");
+        assert!(
+            (cn_pos - cn_neg).abs() < 1e-12,
+            "CN should be symmetric for ±δ"
+        );
     }
 
     #[test]
@@ -104,7 +105,10 @@ mod tests {
     #[test]
     fn test_hinge_moment_positive() {
         let cm = BodyFlapAero::hinge_moment_coefficient(0.2, 0.05, 0.1);
-        assert!(cm > 0.0, "Hinge moment should be positive for positive deflection");
+        assert!(
+            cm > 0.0,
+            "Hinge moment should be positive for positive deflection"
+        );
     }
 
     #[test]
@@ -146,7 +150,10 @@ mod tests {
     fn test_canard_interference_decreases_with_span() {
         let f1 = BodyFlapAero::canard_interference(0.05, 0.1);
         let f2 = BodyFlapAero::canard_interference(0.2, 0.1);
-        assert!(f2 < f1, "Interference should decrease as canard span increases");
+        assert!(
+            f2 < f1,
+            "Interference should decrease as canard span increases"
+        );
     }
 
     // ======================================================================
@@ -162,7 +169,10 @@ mod tests {
     #[test]
     fn test_downwash_angle_positive() {
         let epsilon = BodyFlapAero::downwash_angle(0.1, 0.1, 0.5);
-        assert!(epsilon > 0.0, "Downwash should be positive for positive AOA");
+        assert!(
+            epsilon > 0.0,
+            "Downwash should be positive for positive AOA"
+        );
     }
 
     #[test]
@@ -191,6 +201,11 @@ mod tests {
         // ε = 2*0.01 / (PI*0.25/0.09) = 0.02 / 8.727 = 0.00229  (below clamp of 0.005)
         // ε = 2*0.01 / (PI*0.25/0.36) = 0.02 / 2.182 = 0.00917  (below clamp of 0.005)
         // Now check the model behavior: with distance^2 in numerator, ε increases
-        assert!(e2 > e1 + 1e-12, "Downwash should increase with distance^2 in this model: e1={}, e2={}", e1, e2);
+        assert!(
+            e2 > e1 + 1e-12,
+            "Downwash should increase with distance^2 in this model: e1={}, e2={}",
+            e1,
+            e2
+        );
     }
 }

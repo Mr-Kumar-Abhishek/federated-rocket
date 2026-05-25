@@ -57,7 +57,9 @@ fn isa_temperature(altitude: f64) -> f64 {
         if h <= STRAT_3_ALT {
             t_at_32k + LAPSE_STRAT_2 * (h - STRAT_2_ALT)
         } else {
-            t_at_32k + LAPSE_STRAT_2 * (STRAT_3_ALT - STRAT_2_ALT) + LAPSE_STRAT_3 * (h - STRAT_3_ALT)
+            t_at_32k
+                + LAPSE_STRAT_2 * (STRAT_3_ALT - STRAT_2_ALT)
+                + LAPSE_STRAT_3 * (h - STRAT_3_ALT)
         }
     }
 }
@@ -83,10 +85,15 @@ fn isa_pressure(altitude: f64) -> f64 {
 
     // --- Layer 2: Tropopause (11 – 20 km), isothermal ---
     if h <= STRAT_1_ALT {
-        return p_11 * (-STANDARD_GRAVITY * (h - TROPOPAUSE_ALT) / (SPECIFIC_GAS_CONSTANT_DRY_AIR * t_11)).exp();
+        return p_11
+            * (-STANDARD_GRAVITY * (h - TROPOPAUSE_ALT) / (SPECIFIC_GAS_CONSTANT_DRY_AIR * t_11))
+                .exp();
     }
 
-    let p_20 = p_11 * (-STANDARD_GRAVITY * (STRAT_1_ALT - TROPOPAUSE_ALT) / (SPECIFIC_GAS_CONSTANT_DRY_AIR * t_11)).exp();
+    let p_20 = p_11
+        * (-STANDARD_GRAVITY * (STRAT_1_ALT - TROPOPAUSE_ALT)
+            / (SPECIFIC_GAS_CONSTANT_DRY_AIR * t_11))
+            .exp();
 
     // --- Layer 3: Lower stratosphere (20 – 32 km), L = +0.001 K/m ---
     let t_20 = 216.65;
@@ -124,9 +131,7 @@ fn speed_of_sound(temperature: f64) -> f64 {
 /// Compute dynamic viscosity using Sutherland's law.
 fn viscosity(temperature: f64) -> f64 {
     let t_ref = STANDARD_TEMPERATURE;
-    AIR_VISCOSITY_SEA_LEVEL
-        * (temperature / t_ref).powf(1.5)
-        * (t_ref + SUTHERLAND_CONSTANT)
+    AIR_VISCOSITY_SEA_LEVEL * (temperature / t_ref).powf(1.5) * (t_ref + SUTHERLAND_CONSTANT)
         / (temperature + SUTHERLAND_CONSTANT)
 }
 
@@ -375,8 +380,16 @@ mod tests {
     fn test_isa_sea_level() {
         let model = StandardAtmosphere::new();
         let cond = model.conditions_at_altitude(0.0);
-        assert!((cond.temperature - 288.15).abs() < 0.1, "T = {}", cond.temperature);
-        assert!((cond.pressure - 101325.0).abs() < 10.0, "P = {}", cond.pressure);
+        assert!(
+            (cond.temperature - 288.15).abs() < 0.1,
+            "T = {}",
+            cond.temperature
+        );
+        assert!(
+            (cond.pressure - 101325.0).abs() < 10.0,
+            "P = {}",
+            cond.pressure
+        );
         assert!((cond.density - 1.225).abs() < 0.01, "ρ = {}", cond.density);
     }
 
@@ -385,9 +398,17 @@ mod tests {
         let model = StandardAtmosphere::new();
         let cond = model.conditions_at_altitude(11_000.0);
         // Temperature should be 216.65 K at the tropopause
-        assert!((cond.temperature - 216.65).abs() < 0.1, "T = {}", cond.temperature);
+        assert!(
+            (cond.temperature - 216.65).abs() < 0.1,
+            "T = {}",
+            cond.temperature
+        );
         // Pressure should be around 22.6 kPa
-        assert!((cond.pressure - 22632.0).abs() < 100.0, "P = {}", cond.pressure);
+        assert!(
+            (cond.pressure - 22632.0).abs() < 100.0,
+            "P = {}",
+            cond.pressure
+        );
     }
 
     #[test]
@@ -395,7 +416,11 @@ mod tests {
         let model = StandardAtmosphere::new();
         let cond = model.conditions_at_altitude(20_000.0);
         // Temperature should still be 216.65 K at 20 km
-        assert!((cond.temperature - 216.65).abs() < 0.1, "T = {}", cond.temperature);
+        assert!(
+            (cond.temperature - 216.65).abs() < 0.1,
+            "T = {}",
+            cond.temperature
+        );
         // Pressure should be around 5.5 kPa
         assert!(cond.pressure < 6000.0, "P = {}", cond.pressure);
         assert!(cond.pressure > 5000.0, "P = {}", cond.pressure);
@@ -406,7 +431,11 @@ mod tests {
         let model = StandardAtmosphere::new();
         let cond = model.conditions_at_altitude(32_000.0);
         // Temperature should be around 228.65 K
-        assert!((cond.temperature - 228.65).abs() < 0.5, "T = {}", cond.temperature);
+        assert!(
+            (cond.temperature - 228.65).abs() < 0.5,
+            "T = {}",
+            cond.temperature
+        );
     }
 
     #[test]
@@ -414,7 +443,11 @@ mod tests {
         let model = StandardAtmosphere::new();
         let cond = model.conditions_at_altitude(47_000.0);
         // Temperature should be around 270.65 K
-        assert!((cond.temperature - 270.65).abs() < 1.0, "T = {}", cond.temperature);
+        assert!(
+            (cond.temperature - 270.65).abs() < 1.0,
+            "T = {}",
+            cond.temperature
+        );
     }
 
     #[test]
@@ -423,7 +456,10 @@ mod tests {
         let t0 = model.conditions_at_altitude(0.0).temperature;
         let t5k = model.conditions_at_altitude(5_000.0).temperature;
         let t11k = model.conditions_at_altitude(11_000.0).temperature;
-        assert!(t5k < t0, "Temp should decrease with altitude in troposphere");
+        assert!(
+            t5k < t0,
+            "Temp should decrease with altitude in troposphere"
+        );
         assert!(t11k < t5k, "Temp should continue decreasing");
     }
 
@@ -439,14 +475,22 @@ mod tests {
     fn test_isa_speed_of_sound_sea_level() {
         let model = StandardAtmosphere::new();
         let cond = model.conditions_at_altitude(0.0);
-        assert!((cond.speed_of_sound - 340.294).abs() < 0.5, "a = {}", cond.speed_of_sound);
+        assert!(
+            (cond.speed_of_sound - 340.294).abs() < 0.5,
+            "a = {}",
+            cond.speed_of_sound
+        );
     }
 
     #[test]
     fn test_isa_viscosity_sea_level() {
         let model = StandardAtmosphere::new();
         let cond = model.conditions_at_altitude(0.0);
-        assert!((cond.viscosity - 1.7894e-5).abs() < 1e-7, "μ = {}", cond.viscosity);
+        assert!(
+            (cond.viscosity - 1.7894e-5).abs() < 1e-7,
+            "μ = {}",
+            cond.viscosity
+        );
     }
 
     #[test]
@@ -501,7 +545,11 @@ mod tests {
         let model = ExtremeTemperatureAtmosphere::new(true, false);
         let cond = model.conditions_at_altitude(0.0);
         // Sea level should be 288.15 + 15 = 303.15 K
-        assert!((cond.temperature - 303.15).abs() < 0.5, "T = {}", cond.temperature);
+        assert!(
+            (cond.temperature - 303.15).abs() < 0.5,
+            "T = {}",
+            cond.temperature
+        );
     }
 
     #[test]
@@ -509,7 +557,11 @@ mod tests {
         let model = ExtremeTemperatureAtmosphere::new(false, true);
         let cond = model.conditions_at_altitude(0.0);
         // Sea level should be 288.15 - 15 = 273.15 K
-        assert!((cond.temperature - 273.15).abs() < 0.5, "T = {}", cond.temperature);
+        assert!(
+            (cond.temperature - 273.15).abs() < 0.5,
+            "T = {}",
+            cond.temperature
+        );
     }
 
     #[test]
@@ -519,16 +571,23 @@ mod tests {
         let cond_hot = hot.conditions_at_altitude(11_000.0);
         let cond_cold = cold.conditions_at_altitude(11_000.0);
         // At the tropopause the offset should be zero
-        assert!((cond_hot.temperature - cond_cold.temperature).abs() < 0.5,
+        assert!(
+            (cond_hot.temperature - cond_cold.temperature).abs() < 0.5,
             "Hot and cold should converge at tropopause: hot={}, cold={}",
-            cond_hot.temperature, cond_cold.temperature);
+            cond_hot.temperature,
+            cond_cold.temperature
+        );
     }
 
     #[test]
     fn test_extreme_neither_flag() {
         let model = ExtremeTemperatureAtmosphere::new(false, false);
         let cond = model.conditions_at_altitude(0.0);
-        assert!((cond.temperature - 288.15).abs() < 0.5, "T = {}", cond.temperature);
+        assert!(
+            (cond.temperature - 288.15).abs() < 0.5,
+            "T = {}",
+            cond.temperature
+        );
     }
 
     #[test]
@@ -536,7 +595,11 @@ mod tests {
         let model = ExtremeTemperatureAtmosphere::new(true, true);
         let cond = model.conditions_at_altitude(0.0);
         // Hot takes precedence: +15 °C
-        assert!((cond.temperature - 303.15).abs() < 0.5, "T = {}", cond.temperature);
+        assert!(
+            (cond.temperature - 303.15).abs() < 0.5,
+            "T = {}",
+            cond.temperature
+        );
     }
 
     // --- Integration: AtmosphericConditions construction ---
