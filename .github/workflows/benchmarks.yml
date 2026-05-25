@@ -22,7 +22,7 @@ jobs:
         run: cargo criterion --workspace --message-format=json 2>&1 | tee benchmark_results.json || true
       
       - name: Store benchmark results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: benchmark-results
           path: target/criterion/
