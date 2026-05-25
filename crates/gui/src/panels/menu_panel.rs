@@ -50,6 +50,9 @@ pub fn show_menu_bar(app: &mut FederatedRocketApp, ctx: &egui::Context) {
                 ui.checkbox(&mut app.show_simulation_panel, "Simulation Panel");
                 ui.checkbox(&mut app.show_results_panel, "Results Panel");
                 ui.checkbox(&mut app.show_motor_panel, "Motor Panel");
+                ui.checkbox(&mut app.show_optimization_panel, "Optimization Panel");
+                ui.checkbox(&mut app.show_plot_panel, "Plot Panel");
+                ui.checkbox(&mut app.show_dashboard_panel, "Dashboard Panel");
             });
 
             ui.menu_button("Help", |ui| {

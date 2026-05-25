@@ -3,7 +3,7 @@ use federated_rocket_core::component_tree::ComponentKey;
 use federated_rocket_core::component_tree::ComponentTree;
 use federated_rocket_simulation::engine::SimulationResult;
 
-use crate::panels::{design_panel, menu_panel, motor_panel, results_panel, simulation_panel};
+use crate::panels::{dashboard_panel, design_panel, menu_panel, motor_panel, optimization_panel, plot_panel, results_panel, simulation_panel};
 
 /// Main application state
 pub struct FederatedRocketApp {
@@ -34,6 +34,22 @@ pub struct FederatedRocketApp {
     pub show_file_open_dialog: bool,
     pub show_file_save_as_dialog: bool,
     pub dialog_path: String,
+
+    // New: Plot state
+    pub plot_type: usize,  // 0=altitude, 1=velocity, 2=mach, 3=flight_path
+
+    // New: Optimization state
+    pub optimization_param_idx: usize,
+    pub optimization_goal_idx: usize,
+    pub optimization_min: f64,
+    pub optimization_max: f64,
+    pub is_optimizing: bool,
+    pub optimization_result: Option<federated_rocket_optimization::types::OptimizationResult>,
+
+    // New: Panel visibility
+    pub show_plot_panel: bool,
+    pub show_dashboard_panel: bool,
+    pub show_optimization_panel: bool,
 }
 
 impl FederatedRocketApp {
@@ -55,6 +71,22 @@ impl FederatedRocketApp {
             show_file_open_dialog: false,
             show_file_save_as_dialog: false,
             dialog_path: String::new(),
+
+            // Plot
+            plot_type: 0,
+
+            // Optimization
+            optimization_param_idx: 0,
+            optimization_goal_idx: 0,
+            optimization_min: 0.0,
+            optimization_max: 50.0,
+            is_optimizing: false,
+            optimization_result: None,
+
+            // Panel visibility
+            show_plot_panel: true,
+            show_dashboard_panel: true,
+            show_optimization_panel: false,
         }
     }
 }
@@ -78,17 +110,38 @@ impl eframe::App for FederatedRocketApp {
             .resizable(true)
             .default_width(350.0)
             .show(ctx, |ui| {
-                ui.heading("Controls");
-                ui.separator();
-                motor_panel::show(self, ui);
-                ui.separator();
-                simulation_panel::show(self, ui);
+                egui::ScrollArea::vertical().show(ui, |ui| {
+                    ui.heading("Controls");
+                    ui.separator();
+                    motor_panel::show(self, ui);
+                    ui.separator();
+                    simulation_panel::show(self, ui);
+
+                    if self.show_optimization_panel {
+                        ui.separator();
+                        optimization_panel::show(self, ui);
+                    }
+                });
             });
 
+        // Center: Results with tabs for Plots, Dashboard, Data
         egui::CentralPanel::default().show(ctx, |ui| {
-            ui.heading("Results");
+            ui.horizontal(|ui| {
+                ui.heading("Results");
+                ui.separator();
+                ui.selectable_value(&mut self.show_plot_panel, true, "📈 Plot");
+                ui.selectable_value(&mut self.show_dashboard_panel, true, "📊 Dashboard");
+                ui.selectable_value(&mut self.show_results_panel, true, "📋 Data");
+            });
             ui.separator();
-            results_panel::show(self, ui);
+
+            if self.show_plot_panel {
+                plot_panel::show(self, ui);
+            } else if self.show_dashboard_panel {
+                dashboard_panel::show(self, ui);
+            } else if self.show_results_panel {
+                results_panel::show(self, ui);
+            }
         });
 
         // Status bar at bottom

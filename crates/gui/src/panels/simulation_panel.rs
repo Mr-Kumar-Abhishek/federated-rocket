@@ -38,13 +38,18 @@ pub fn show(app: &mut FederatedRocketApp, ui: &mut egui::Ui) {
                 time_step,
                 reference_area: std::f64::consts::PI * 0.0254 * 0.0254,
                 reference_diameter: 0.0508,
+                max_time,
+                min_time_step: None,
+                max_time_step: None,
+                adaptive_tolerance: None,
+                use_adaptive_stepping: false,
             };
 
             let event_config = federated_rocket_simulation::events::EventConfig {
                 launch_rod_clear_altitude: rod_clear,
                 max_simulation_time: max_time,
                 ground_altitude: 0.0,
-                output_interval: 0.1,
+                output_interval: Some(0.1),
                 ..Default::default()
             };
 
