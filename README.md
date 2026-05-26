@@ -3,7 +3,6 @@
 A modern, high-performance model rocket simulation and design tool written in Rust.
 
 [![CI](https://github.com/Mr-Kumar-Abhishek/federated-rocket/actions/workflows/ci.yml/badge.svg)](https://github.com/Mr-Kumar-Abhishek/federated-rocket/actions/workflows/ci.yml)
-[![Coverage](https://codecov.io/gh/Mr-Kumar-Abhishek/federated-rocket/branch/master/graph/badge.svg)](https://codecov.io/gh/Mr-Kumar-Abhishek/federated-rocket)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Rust](https://img.shields.io/badge/rust-1.80.0%2B-orange.svg)](rust-toolchain.toml)
 
