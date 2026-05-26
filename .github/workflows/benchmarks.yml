@@ -16,7 +16,9 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       
       - name: Install cargo-criterion
-        uses: taiki-e/install-action@cargo-criterion
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-criterion
       
       - name: Run benchmarks
         run: cargo criterion --workspace --message-format=json 2>&1 | tee benchmark_results.json || true
