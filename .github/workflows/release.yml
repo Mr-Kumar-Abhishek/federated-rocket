@@ -57,7 +57,7 @@ jobs:
             archive_ext: .tar.gz
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@stable
       
       - name: Build release
